@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { AuthButton } from '@/components/AuthButton';
 
@@ -70,6 +70,8 @@ export default function Home() {
 
   // 币安Alpha代币 - 使用正确的 CoinGecko ID
   const COINGECKO_IDS = [
+// DexScreener API 获取真实链上数据
+const DEXSCREENER_API = 'https://api.dexscreener.com/latest/dex/tokens';
     'jito', 'worldcoin', 'arkham', 'celestia', 
     'xy-brocks', 'ai16z', 'drift-protocol', 'grass', 
     'hyperliquid', 'syrup-mixnet'
@@ -95,7 +97,51 @@ export default function Home() {
     'celestia': 'TIA', 'hyperliquid': 'HYPE', 'syrup-mixnet': 'SYRUP'
   };
 
-  const fetchTrending = async () => {
+  
+// DexScreener API - 获取真实链上交易数据
+const fetchDexScreenerData = async (symbol: string): Promise<{buys: number, sells: number, liquidity: number, volume24h: number}> => {
+  try {
+    // 尝试获取多个链的数据
+    const response = await fetch(`${DEXSCREENER_API}/${symbol.toLowerCase()}`);
+    if (!response.ok) return { buys: 0, sells: 0, liquidity: 0, volume24h: 0 };
+    
+    const data = await response.json();
+    if (!data.pairs || data.pairs.length === 0) return { buys: 0, sells: 0, liquidity: 0, volume24h: 0 };
+    
+    // 获取流动性最好的交易对
+    const bestPair = data.pairs.sort((a: any, b: any) => (b.liquidity?.usd || 0) - (a.liquidity?.usd || 0))[0];
+    
+    if (!bestPair) return { buys: 0, sells: 0, liquidity: 0, volume24h: 0 };
+    
+    // 计算24小时交易量（从所有交易对汇总）
+    let totalVolume = 0;
+    let totalBuys = 0;
+    let totalSells = 0;
+    
+    data.pairs.forEach((pair: any) => {
+      if (pair.volume?.h24) {
+        totalVolume += pair.volume.h24;
+      }
+      if (pair.txns?.h24) {
+        totalBuys += pair.txns.h24.buys || 0;
+        totalSells += pair.txns.h24.sells || 0;
+      }
+    });
+    
+    return {
+      buys: totalBuys,
+      sells: totalSells,
+      liquidity: bestPair.liquidity?.usd || 0,
+      volume24h: totalVolume
+    };
+  } catch (error) {
+    console.error('DexScreener API error:', error);
+    return { buys: 0, sells: 0, liquidity: 0, volume24h: 0 };
+  }
+};
+
+
+const fetchTrending = async () => {
     try {
       // 使用 CoinGecko API 获取真实数据（支持 CORS）
       const ids = COINGECKO_IDS.join(',');
@@ -105,13 +151,21 @@ export default function Home() {
       
       const data = await response.json();
       
+      // 异步获取链上数据（不阻塞主要显示）
+      const fetchChainDataForToken = async (symbol: string) => {
+        try {
+          const chainData = await fetchDexScreenerData(symbol.toUpperCase());
+          return chainData;
+        } catch { return { buys: 0, sells: 0, liquidity: 0, volume24h: 0 }; }
+      };
+      
       // 转换为展示格式
       const realTokens = data.map((coin: any, index: number) => {
         const change = coin.price_change_percentage_24h || 0;
         const price = coin.current_price;
         const volume = coin.total_volume;
         
-        // 计算 AI 评分
+        // 计算 AI 评分（基于CoinGecko数据）
         let aiScore = 50;
         if (Math.abs(change) >= 20) aiScore += 25;
         else if (Math.abs(change) >= 10) aiScore += 20;
@@ -141,12 +195,26 @@ export default function Home() {
           smartMoney: Math.random() > 0.3,
           lastActive: 'Recently',
           binanceAlpha: true,
-          newListing: coin.new_listing || false
+          newListing: coin.new_listing || false,
+          // 链上数据（异步获取）
+          chainBuys: 0,
+          chainSells: 0,
+          chainLiquidity: 0
         };
       }).sort((a: any, b: any) => b.aiScore - a.aiScore);
       
       setTokens(realTokens);
       setLastUpdated(new Date());
+      
+      // 后台更新链上数据
+      realTokens.forEach((token: any, idx: number) => {
+        setTimeout(async () => {
+          const chainData = await fetchChainDataForToken(token.symbol);
+          setTokens(prev => prev.map(t => 
+            t.symbol === token.symbol ? { ...t, ...chainData } : t
+          ));
+        }, idx * 100); // 间隔获取避免限流
+      });
     } catch (error) {
       console.error('Failed to fetch from CoinGecko:', error);
       // 备用：调用本地 API
@@ -178,23 +246,72 @@ export default function Home() {
       // 计算评分并排序
       const scored = data.map((coin: any) => {
         const change = coin.price_change_percentage_24h || 0;
+        const change7d = coin.price_change_percentage_7d_in_currency || 0;
         const price = coin.current_price;
         const volume = coin.total_volume;
+        const marketCap = coin.market_cap;
         
-        let score = 50;
-        if (Math.abs(change) >= 20) score += 25;
-        else if (Math.abs(change) >= 10) score += 20;
-        else if (Math.abs(change) >= 5) score += 15;
-        if (volume >= 1e9) score += 15;
-        else if (volume >= 1e8) score += 12;
+        // 获取链上数据
+        const dexData = await fetchDexScreenerData(coin.symbol.toUpperCase());
+        
+        // === 多维度评分系统（0-100分）===
+        let score = 50; // 基础分
+        
+        // 1. 价格变化评分 (0-25分)
+        if (Math.abs(change) >= 50) score += 25;
+        else if (Math.abs(change) >= 30) score += 22;
+        else if (Math.abs(change) >= 20) score += 18;
+        else if (Math.abs(change) >= 10) score += 15;
+        else if (Math.abs(change) >= 5) score += 10;
+        
+        // 2. 7天趋势评分 (0-20分)
+        if (change7d >= 50) score += 20;
+        else if (change7d >= 30) score += 16;
+        else if (change7d >= 15) score += 12;
+        else if (change7d >= 5) score += 8;
+        
+        // 3. 链上交易活跃度 (0-25分) - 核心指标！
+        const totalTx = dexData.buys + dexData.sells;
+        if (totalTx >= 1000) score += 25;
+        else if (totalTx >= 500) score += 20;
+        else if (totalTx >= 200) score += 15;
+        else if (totalTx >= 50) score += 10;
+        
+        // 4. 聪明钱指标：买入/卖出比例 (0-15分)
+        const buyRatio = dexData.buys / (dexData.buys + dexData.sells || 1);
+        if (buyRatio >= 0.7) score += 15;
+        else if (buyRatio >= 0.6) score += 12;
+        else if (buyRatio >= 0.5) score += 8;
+        else if (buyRatio >= 0.4) score += 4;
+        
+        // 5. 流动性评分 (0-10分)
+        if (dexData.liquidity >= 1e7) score += 10;
+        else if (dexData.liquidity >= 1e6) score += 8;
+        else if (dexData.liquidity >= 1e5) score += 5;
+        
+        // 6. 市场关注度 (0-5分)
+        if (coin.market_cap_rank && coin.market_cap_rank <= 50) score += 5;
+        else if (coin.market_cap_rank && coin.market_cap_rank <= 100) score += 3;
+        
+        // 智能标签判断
+        const tags: string[] = [];
+        if (buyRatio >= 0.6) tags.push('聪明钱买入');
+        else if (buyRatio < 0.4) tags.push('聪明钱卖出');
+        if (dexData.buys > 100) tags.push('链上活跃');
+        if (change >= 10) tags.push('强势上涨');
+        if (change7d >= 20) tags.push('持续强势');
+        if (dexData.liquidity >= 1e6) tags.push('高流动性');
         
         return { 
           symbol: coin.symbol.toUpperCase(), 
-          name: coin.name, 
+          name: coin.name,
           price, 
           change, 
           score, 
-          volume 
+          volume,
+          chainData: dexData,
+          buyRatio,
+          tags
         };
       }).sort((a: any, b: any) => b.score - a.score);
       
@@ -209,7 +326,13 @@ export default function Home() {
         smartMoneyScore: t.score + 10,
         socialSentiment: t.score,
         socialBuzz: t.score >= 80 ? '热议中' : '讨论增长',
-        isNewListing: false
+        isNewListing: false,
+        // 新增：真实链上数据
+        chainBuys: t.chainData.buys,
+        chainSells: t.chainData.sells,
+        chainLiquidity: t.chainData.liquidity,
+        buyRatio: (t.buyRatio * 100).toFixed(0) + '%',
+        tags: t.tags
       }));
       
       setTodayPicks(picks);
