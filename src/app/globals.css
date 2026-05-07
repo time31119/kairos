@@ -1,0 +1,132 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  /* 深色主题配色 */
+  --color-background: #0F172A;
+  --color-foreground: #F1F5F9;
+  --color-sidebar-ring: #F59E0B;
+  --color-sidebar-border: #334155;
+  --color-sidebar-accent-foreground: #F59E0B;
+  --color-sidebar-accent: #1E293B;
+  --color-sidebar-primary-foreground: #FFFFFF;
+  --color-sidebar-primary: #F59E0B;
+  --color-sidebar-foreground: #94A3B8;
+  --color-sidebar: #1E293B;
+  --color-chart-5: #F59E0B;
+  --color-chart-4: #3B82F6;
+  --color-chart-3: #10B981;
+  --color-chart-2: #8B5CF6;
+  --color-chart-1: #EC4899;
+  --color-ring: #F59E0B;
+  --color-input: #1E293B;
+  --color-border: #334155;
+  --color-destructive: #EF4444;
+  --color-accent-foreground: #F59E0B;
+  --color-accent: #1E293B;
+  --color-muted-foreground: #94A3B8;
+  --color-muted: #1E293B;
+  --color-secondary-foreground: #F1F5F9;
+  --color-secondary: #1E293B;
+  --color-primary-foreground: #FFFFFF;
+  --color-primary: #F59E0B;
+  --color-popover-foreground: #F1F5F9;
+  --color-popover: #1E293B;
+  --color-card-foreground: #F1F5F9;
+  --color-card: #1E293B;
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: calc(var(--radius) + 8px);
+  --radius-3xl: calc(var(--radius) + 12px);
+  --radius-4xl: calc(var(--radius) + 16px);
+  --font-sans: var(--font-inter), 'Inter', sans-serif;
+  --font-heading: var(--font-exo), 'Exo', sans-serif;
+}
+
+:root {
+  --radius: 0.625rem;
+  /* 深色主题 */
+  --background: #0F172A;
+  --foreground: #F1F5F9;
+  --card: #1E293B;
+  --card-foreground: #F1F5F9;
+  --popover: #1E293B;
+  --popover-foreground: #F1F5F9;
+  --primary: #F59E0B;
+  --primary-foreground: #FFFFFF;
+  --secondary: #1E293B;
+  --secondary-foreground: #F1F5F9;
+  --muted: #1E293B;
+  --muted-foreground: #94A3B8;
+  --accent: #334155;
+  --accent-foreground: #F59E0B;
+  --destructive: #EF4444;
+  --destructive-foreground: #FFFFFF;
+  --border: #334155;
+  --input: #1E293B;
+  --ring: #F59E0B;
+  --chart-1: #F59E0B;
+  --chart-2: #3B82F6;
+  --chart-3: #10B981;
+  --chart-4: #8B5CF6;
+  --chart-5: #EC4899;
+  --sidebar: #1E293B;
+  --sidebar-foreground: #94A3B8;
+  --sidebar-primary: #F59E0B;
+  --sidebar-primary-foreground: #FFFFFF;
+  --sidebar-accent: #334155;
+  --sidebar-accent-foreground: #F59E0B;
+}
+
+/* 基础样式 */
+* {
+  border-color: var(--border);
+}
+
+body {
+  background-color: var(--background);
+  color: var(--foreground);
+}
+
+/* 自定义滚动条 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #1E293B;
+}
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 8px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #F59E0B;
+}
+
+/* 渐变文字 */
+.gradient-text {
+  background: linear-gradient(135deg, #F59E0B, #FBBF24);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* 卡片光效 */
+.card-glow:hover {
+  box-shadow: 0 0 30px rgba(245, 158, 11, 0.1);
+}
+
+/* 动画 */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 20px rgba(245, 158, 11, 0.2); }
+  50% { box-shadow: 0 0 40px rgba(245, 158, 11, 0.4); }
+}
+
+.animate-pulse-glow {
+  animation: pulse-glow 2s ease-in-out infinite;
+}
