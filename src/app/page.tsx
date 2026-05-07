@@ -58,43 +58,46 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // 币安 Alpha 代币列表
   const BINANCE_ALPHA_SYMBOLS = [
-    'JTOUSDT', 'WLDUSDT', 'ARKMUSDT', 'PORT3USDT', 'TIAUSDT', 
-    'NARUSDT', 'AI16ZUSDT', 'DRIFTUSDT', 'GRASSUSDT', 'HYPEUSDT', 'SYRUPUSDT'
+    'jto', 'wld', 'arkm', 'port3', 'tia', 
+    'nar', 'ai16z', 'drift', 'grass', 'hype', 'syrup'
   ];
 
   // 代币名称映射
   const TOKEN_NAMES: Record<string, string> = {
-    'JTO': 'Jito', 'WLD': 'Worldcoin', 'ARKM': 'Arkham', 'PORT3': 'Port3',
-    'TIA': 'Celestia', 'NAR': 'XY Labs', 'AI16Z': 'ai16z', 'DRIFT': 'Drift',
-    'GRASS': 'Grass', 'HYPE': 'Hyperliquid', 'SYRUP': 'Syrup'
+    'jto': 'Jito', 'wld': 'Worldcoin', 'arkm': 'Arkham', 'port3': 'Port3',
+    'tia': 'Celestia', 'nar': 'XY Labs', 'ai16z': 'ai16z', 'drift': 'Drift',
+    'grass': 'Grass', 'hype': 'Hyperliquid', 'syrup': 'Syrup'
   };
 
   // 代币链映射
   const TOKEN_CHAINS: Record<string, string> = {
-    'JTO': 'Solana', 'WLD': 'Ethereum', 'ARKM': 'Ethereum', 'PORT3': 'BNB Chain',
-    'TIA': 'Cosmos', 'NAR': 'Solana', 'AI16Z': 'Solana', 'DRIFT': 'Solana',
-    'GRASS': 'Solana', 'HYPE': 'Ethereum', 'SYRUP': 'BNB Chain'
+    'jto': 'Solana', 'wld': 'Ethereum', 'arkm': 'Ethereum', 'port3': 'BNB Chain',
+    'tia': 'Cosmos', 'nar': 'Solana', 'ai16z': 'Solana', 'drift': 'Solana',
+    'grass': 'Solana', 'hype': 'Ethereum', 'syrup': 'BNB Chain'
+  };
+
+  // 币安Alpha代币 - symbol映射
+  const SYMBOL_TO_BINANCE: Record<string, string> = {
+    'jto': 'JTOUSDT', 'wld': 'WLDUSDT', 'arkm': 'ARKMUSDT',
+    'tia': 'TIAUSDT', 'hype': 'HYPEUSDT', 'syrup': 'SYRUPUSDT'
   };
 
   const fetchTrending = async () => {
     try {
-      // 直接从客户端调用币安 API 获取真实数据
-      const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-      const allTickers = await response.json();
+      // 使用 CoinGecko API 获取真实数据（支持 CORS）
+      const ids = BINANCE_ALPHA_SYMBOLS.join(',');
+      const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`);
       
-      // 过滤 Alpha 代币
-      const alphaTickers = allTickers.filter((t: any) => 
-        BINANCE_ALPHA_SYMBOLS.includes(t.symbol)
-      );
+      if (!response.ok) throw new Error('CoinGecko API failed');
+      
+      const data = await response.json();
       
       // 转换为展示格式
-      const realTokens = alphaTickers.map((ticker: any, index: number) => {
-        const symbol = ticker.symbol.replace('USDT', '');
-        const change = parseFloat(ticker.priceChangePercent) || 0;
-        const price = parseFloat(ticker.lastPrice);
-        const volume = parseFloat(ticker.quoteVolume);
+      const realTokens = data.map((coin: any, index: number) => {
+        const change = coin.price_change_percentage_24h || 0;
+        const price = coin.current_price;
+        const volume = coin.total_volume;
         
         // 计算 AI 评分
         let aiScore = 50;
@@ -108,33 +111,33 @@ export default function Home() {
         
         return {
           rank: index + 1,
-          name: TOKEN_NAMES[symbol] || symbol,
-          symbol: symbol,
-          chain: TOKEN_CHAINS[symbol] || 'Binance',
+          name: coin.name,
+          symbol: coin.symbol.toUpperCase(),
+          chain: TOKEN_CHAINS[coin.id] || 'Binance',
           chainIcon: '',
           price: `$${price < 1 ? price.toFixed(6) : price.toFixed(2)}`,
           change24h: `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`,
           changeColor: change >= 0 ? 'green' as const : 'red' as const,
           volume: volume >= 1e9 ? `$${(volume/1e9).toFixed(1)}B` : `$${(volume/1e6).toFixed(1)}M`,
           volumeChange: 0,
-          marketCap: 'N/A',
-          holders: 'N/A',
+          marketCap: `$${(coin.market_cap/1e9).toFixed(2)}B`,
+          holders: coin.market_cap_rank ? `#${coin.market_cap_rank}` : 'N/A',
           aiScore: Math.min(100, aiScore),
           aiTrend: aiScore >= 75 ? 'up' as const : aiScore >= 60 ? 'stable' as const : 'down' as const,
-          tags: [TOKEN_CHAINS[symbol] || 'Binance'],
+          tags: [TOKEN_CHAINS[coin.id] || 'Binance'],
           signal: aiScore >= 80 ? 'hot' as const : aiScore >= 65 ? 'rising' as const : 'stable' as const,
           smartMoney: Math.random() > 0.3,
           lastActive: 'Recently',
           binanceAlpha: true,
-          newListing: false
+          newListing: coin.new_listing || false
         };
       }).sort((a: any, b: any) => b.aiScore - a.aiScore);
       
       setTokens(realTokens);
       setLastUpdated(new Date());
     } catch (error) {
-      console.error('Failed to fetch from Binance:', error);
-      // 如果币安失败，尝试调用本地 API
+      console.error('Failed to fetch from CoinGecko:', error);
+      // 备用：调用本地 API
       try {
         const res = await fetch('/api/trending');
         const data = await res.json();
@@ -152,19 +155,19 @@ export default function Home() {
 
   const fetchTodayPicks = async () => {
     try {
-      // 使用币安真实数据计算今日推荐
-      const response = await fetch('https://api.binance.com/api/v3/ticker/24hr');
-      const allTickers = await response.json();
-      const alphaTickers = allTickers.filter((t: any) => 
-        BINANCE_ALPHA_SYMBOLS.includes(t.symbol)
-      );
+      // 使用 CoinGecko API 获取真实数据
+      const ids = BINANCE_ALPHA_SYMBOLS.join(',');
+      const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`);
+      
+      if (!response.ok) throw new Error('CoinGecko API failed');
+      
+      const data = await response.json();
       
       // 计算评分并排序
-      const scored = alphaTickers.map((ticker: any) => {
-        const symbol = ticker.symbol.replace('USDT', '');
-        const change = parseFloat(ticker.priceChangePercent) || 0;
-        const price = parseFloat(ticker.lastPrice);
-        const volume = parseFloat(ticker.quoteVolume);
+      const scored = data.map((coin: any) => {
+        const change = coin.price_change_percentage_24h || 0;
+        const price = coin.current_price;
+        const volume = coin.total_volume;
         
         let score = 50;
         if (Math.abs(change) >= 20) score += 25;
@@ -173,7 +176,14 @@ export default function Home() {
         if (volume >= 1e9) score += 15;
         else if (volume >= 1e8) score += 12;
         
-        return { symbol, name: TOKEN_NAMES[symbol] || symbol, price, change, score, volume };
+        return { 
+          symbol: coin.symbol.toUpperCase(), 
+          name: coin.name, 
+          price, 
+          change, 
+          score, 
+          volume 
+        };
       }).sort((a: any, b: any) => b.score - a.score);
       
       // 取前5个
