@@ -58,35 +58,37 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  const BINANCE_ALPHA_SYMBOLS = [
-    'jto', 'wld', 'arkm', 'port3', 'tia', 
-    'nar', 'ai16z', 'drift', 'grass', 'hype', 'syrup'
+  // 币安Alpha代币 - 使用正确的 CoinGecko ID
+  const COINGECKO_IDS = [
+    'jito', 'worldcoin', 'arkham', 'celestia', 
+    'xy-brocks', 'ai16z', 'drift-protocol', 'grass', 
+    'hyperliquid', 'syrup-mixnet'
   ];
-
+  
   // 代币名称映射
   const TOKEN_NAMES: Record<string, string> = {
-    'jto': 'Jito', 'wld': 'Worldcoin', 'arkm': 'Arkham', 'port3': 'Port3',
-    'tia': 'Celestia', 'nar': 'XY Labs', 'ai16z': 'ai16z', 'drift': 'Drift',
-    'grass': 'Grass', 'hype': 'Hyperliquid', 'syrup': 'Syrup'
+    'jito': 'Jito', 'worldcoin': 'Worldcoin', 'arkham': 'Arkham', 'celestia': 'Celestia',
+    'xy-brocks': 'XY Labs', 'ai16z': 'ai16z', 'drift-protocol': 'Drift', 'grass': 'Grass',
+    'hyperliquid': 'Hyperliquid', 'syrup-mixnet': 'Syrup'
   };
 
   // 代币链映射
   const TOKEN_CHAINS: Record<string, string> = {
-    'jto': 'Solana', 'wld': 'Ethereum', 'arkm': 'Ethereum', 'port3': 'BNB Chain',
-    'tia': 'Cosmos', 'nar': 'Solana', 'ai16z': 'Solana', 'drift': 'Solana',
-    'grass': 'Solana', 'hype': 'Ethereum', 'syrup': 'BNB Chain'
+    'jito': 'Solana', 'worldcoin': 'Ethereum', 'arkham': 'Ethereum', 'celestia': 'Cosmos',
+    'xy-brocks': 'Solana', 'ai16z': 'Solana', 'drift-protocol': 'Solana', 'grass': 'Solana',
+    'hyperliquid': 'Ethereum', 'syrup-mixnet': 'BNB Chain'
   };
 
   // 币安Alpha代币 - symbol映射
-  const SYMBOL_TO_BINANCE: Record<string, string> = {
-    'jto': 'JTOUSDT', 'wld': 'WLDUSDT', 'arkm': 'ARKMUSDT',
-    'tia': 'TIAUSDT', 'hype': 'HYPEUSDT', 'syrup': 'SYRUPUSDT'
+  const COINGECKO_TO_SYMBOL: Record<string, string> = {
+    'jito': 'JTO', 'worldcoin': 'WLD', 'arkham': 'ARKM',
+    'celestia': 'TIA', 'hyperliquid': 'HYPE', 'syrup-mixnet': 'SYRUP'
   };
 
   const fetchTrending = async () => {
     try {
       // 使用 CoinGecko API 获取真实数据（支持 CORS）
-      const ids = BINANCE_ALPHA_SYMBOLS.join(',');
+      const ids = COINGECKO_IDS.join(',');
       const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`);
       
       if (!response.ok) throw new Error('CoinGecko API failed');
@@ -156,7 +158,7 @@ export default function Home() {
   const fetchTodayPicks = async () => {
     try {
       // 使用 CoinGecko API 获取真实数据
-      const ids = BINANCE_ALPHA_SYMBOLS.join(',');
+      const ids = COINGECKO_IDS.join(',');
       const response = await fetch(`https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${ids}&order=market_cap_desc&sparkline=false&price_change_percentage=24h`);
       
       if (!response.ok) throw new Error('CoinGecko API failed');
