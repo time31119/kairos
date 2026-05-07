@@ -45,6 +45,16 @@ export default function Home() {
   const [todayPicks, setTodayPicks] = useState<TodayPick[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // 自动刷新功能 - 每30秒更新一次
+  useEffect(() => {
+    const interval = setInterval(() => {
+      fetchTrendingData();
+    }, 30000); // 30秒刷新一次
+
+    return () => clearInterval(interval);
+  }, []);
   const [email, setEmail] = useState('');
   const [waitlistMsg, setWaitlistMsg] = useState('');
   const [scanResult, setScanResult] = useState('');
