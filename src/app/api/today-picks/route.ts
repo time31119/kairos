@@ -123,7 +123,7 @@ export async function GET() {
     const todayPicks = allTokens
       .filter((t: { kairosScore: number; smartMoneyScore: number }) => t.kairosScore > 75 && t.smartMoneyScore > 70)
       .sort((a: { kairosScore: number }, b: { kairosScore: number }) => b.kairosScore - a.kairosScore)
-      .slice(0, 4);
+      .slice(0, 5);
     
     // 完整排序榜单
     const rankedTokens = allTokens.sort(
