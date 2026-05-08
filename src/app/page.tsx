@@ -470,6 +470,9 @@ export default function Home() {
                 按投资价值实时排序，只推荐当下真正有机会的标的
               </p>
             </div>
+            <div className="text-sm text-slate-500">
+              {opportunities.filter(t => t.opportunityScore >= 50).length} 个机会标的
+            </div>
           </div>
 
           {loading ? (
@@ -483,9 +486,10 @@ export default function Home() {
             </div>
           ) : (
             <div className="space-y-3">
+              {/* 只展示评分50+且非冷却的代币 */}
               {opportunities
-                .filter(t => t.signal !== 'cooling') // 过滤掉冷却的
-                .slice(0, 8) // 只展示前8个有机会的
+                .filter(t => t.opportunityScore >= 50 && t.signal !== 'cooling')
+                .slice(0, 6) // 最多展示6个最有机会的
                 .map((token) => {
                   const signalStyle = getSignalStyle(token.signal);
                   return (
@@ -573,10 +577,12 @@ export default function Home() {
                   );
                 })}
 
-              {/* 冷却中的代币提示 */}
-              {opportunities.filter(t => t.signal === 'cooling').length > 0 && (
-                <div className="text-center py-4 text-slate-500 text-sm">
-                  还有 {opportunities.filter(t => t.signal === 'cooling').length} 个代币处于冷却状态，已隐藏
+              {/* 无机会时提示 */}
+              {opportunities.filter(t => t.opportunityScore >= 50).length === 0 && !loading && (
+                <div className="text-center py-12 text-slate-500">
+                  <div className="text-4xl mb-4">📊</div>
+                  <p>今日暂无符合条件的Alpha机会</p>
+                  <p className="text-sm mt-2">所有Alpha代币当前处于调整期，建议关注候选池</p>
                 </div>
               )}
             </div>
