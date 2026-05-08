@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Kairos · 捕获关键时刻 | AI驱动Alpha发现平台</title>
+    <meta name="description" content="Kairos 用AI穿透噪音，在聪明钱异动、社群沸腾、叙事转向的瞬间，为你捕捉Alpha爆发前的恰当时机。">
+    <meta name="keywords" content="Kairos, Alpha, 加密货币, AI分析, 聪明钱, 代币发现, Twitter活跃度">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='12' fill='%23F59E0B'/%3E%3Ccircle cx='16' cy='16' r='4' fill='%23FFFFFF'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700;14..32,800&family=Exo:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: #FFFFFF;
+            color: #1A1F2E;
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            scroll-behavior: smooth;
+        }
+
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #F0F2F5;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #D1D5DB;
+            border-radius: 8px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #F59E0B;
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        /* 色彩体系 */
+        .bg-primary { background-color: #FFFFFF; }
+        .bg-secondary { background-color: #F8F9FC; }
+        .text-primary { color: #1A1F2E; }
+        .text-secondary { color: #6B7280; }
+        .text-accent-gold { color: #F59E0B; }
+        .text-accent-blue { color: #3B82F6; }
+        .text-accent-green { color: #10B981; }
+        .border-light { border-color: #E5E7EB; }
+
+        /* 按钮样式 */
+        .btn-primary {
+            background: linear-gradient(135deg, #F59E0B 0%, #D97706 100%);
+            border: none;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-weight: 600;
+            color: white;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(245, 158, 11, 0.3);
+        }
+        .btn-secondary {
+            background: transparent;
+            border: 1px solid #E5E7EB;
+            padding: 12px 32px;
+            border-radius: 40px;
+            font-weight: 500;
+            color: #4B5563;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-secondary:hover {
+            border-color: #F59E0B;
+            color: #F59E0B;
+            background: rgba(245, 158, 11, 0.05);
+        }
+
+        /* 卡片样式 */
+        .card-light {
+            background: #FFFFFF;
+            border-radius: 24px;
+            padding: 28px;
+            transition: all 0.25s ease;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            border: 1px solid #F0F2F5;
+        }
+        .card-light:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 28px rgba(0,0,0,0.08);
+            border-color: #F59E0B20;
+        }
+
+        /* Twitter 活跃度榜单项 */
+        .twitter-rank-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px 0;
+            border-bottom: 1px solid #F0F2F5;
+            transition: all 0.2s ease;
+        }
+        .twitter-rank-item:last-child {
+            border-bottom: none;
+        }
+        .twitter-rank-item:hover {
+            background: #F8F9FC;
+            margin: 0 -12px;
+            padding: 16px 12px;
+            border-radius: 16px;
+        }
+        .rank-number {
+            width: 36px;
+            height: 36px;
+            background: #F3F4F6;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1rem;
+            color: #6B7280;
+        }
+        .rank-number.top1 {
+            background: linear-gradient(135deg, #F59E0B, #FCD34D);
+            color: white;
+        }
+        .rank-number.top2 {
+            background: #E5E7EB;
+            color: #4B5563;
+        }
+        .rank-number.top3 {
+            background: #FEF3C7;
+            color: #D97706;
+        }
+        .token-logo {
+            width: 40px;
+            height: 40px;
+            background: linear-gradient(135deg, #E5E7EB, #F3F4F6);
+            border-radius: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 1.2rem;
+        }
+        .mention-count {
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #F59E0B;
+        }
+        .trend-up {
+            color: #10B981;
+            font-size: 0.75rem;
+        }
+        .trend-down {
+            color: #EF4444;
+            font-size: 0.75rem;
+        }
+
+        /* 特性标签 */
+        .feature-tag {
+            background: #F3F4F6;
+            padding: 4px 12px;
+            border-radius: 40px;
+            font-size: 0.7rem;
+            font-weight: 500;
+            color: #4B5563;
+            display: inline-block;
+            margin-right: 8px;
+            margin-top: 16px;
+        }
+
+        /* 网格布局 */
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+        }
+        .compare-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            align-items: center;
+        }
+        .two-columns {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .container {
+                padding: 0 20px;
+            }
+            .navbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+            .nav-links {
+                flex-wrap: wrap;
+                gap: 24px;
+            }
+            .hero h1 {
+                font-size: 2.2rem !important;
+            }
+            .features-grid {
+                grid-template-columns: 1fr;
+            }
+            .compare-grid {
+                grid-template-columns: 1fr;
+                gap: 24px;
+            }
+            .two-columns {
+                grid-template-columns: 1fr;
+            }
+            .stats-flex {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 16px;
+            }
+            .stat-badge {
+                width: 100%;
+                text-align: center;
+            }
+        }
+
+        footer {
+            border-top: 1px solid #F0F2F5;
+            padding: 48px 0 32px;
+            margin-top: 80px;
+            color: #6B7280;
+            font-size: 0.85rem;
+        }
+
+        .input-glow:focus {
+            outline: none;
+            border-color: #F59E0B;
+            box-shadow: 0 0 0 3px rgba(245,158,11,0.1);
+        }
+
+        .stat-badge {
+            text-align: center;
+            padding: 20px 24px;
+            background: #F8F9FC;
+            border-radius: 32px;
+            min-width: 140px;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #F59E0B;
+            letter-spacing: -0.02em;
+        }
+
+        .navbar {
+            padding: 20px 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            border-bottom: 1px solid #F0F2F5;
+        }
+        .logo {
+            font-family: 'Exo', sans-serif;
+            font-size: 28px;
+            font-weight: 700;
+            letter-spacing: -0.3px;
+            color: #1A1F2E;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .logo-icon {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #F59E0B, #FCD34D);
+            border-radius: 12px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 800;
+            font-size: 18px;
+        }
+        .nav-links {
+            display: flex;
+            gap: 32px;
+            align-items: center;
+        }
+        .nav-links a {
+            text-decoration: none;
+            color: #4B5563;
+            font-weight: 500;
+            transition: 0.2s;
+        }
+        .nav-links a:hover {
+            color: #F59E0B;
+        }
+
+        .refresh-btn {
+            background: transparent;
+            border: 1px solid #E5E7EB;
+            border-radius: 40px;
+            padding: 8px 20px;
+            font-size: 0.8rem;
+            color: #6B7280;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .refresh-btn:hover {
+            border-color: #F59E0B;
+            color: #F59E0B;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 导航栏 -->
+    <nav class="navbar">
+        <div class="logo">
+            <span class="logo-icon">◉</span>
+            KAIROS
+        </div>
+        <div class="nav-links">
+            <a href="#">产品</a>
+            <a href="#">定价</a>
+            <a href="#">关于</a>
+            <a href="#">资源</a>
+            <button class="btn-secondary" style="padding: 8px 20px;" onclick="openWaitlist()">内测预约</button>
+        </div>
+    </nav>
+
+    <!-- Hero 区块 -->
+    <section style="padding: 64px 0 40px;" id="hero">
+        <div style="text-align: center; max-width: 880px; margin: 0 auto;">
+            <div style="display: inline-block; background: #FEF3C7; padding: 6px 14px; border-radius: 40px; font-size: 0.75rem; font-weight: 600; color: #D97706; margin-bottom: 32px;">
+                ✦ AI驱动的Alpha时刻捕获平台 ✦
+            </div>
+            <h1 style="font-size: 3.5rem; font-weight: 800; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 24px; color: #1A1F2E;">
+                时间有两种。<br>
+                <span style="background: linear-gradient(135deg, #F59E0B, #FCD34D); background-clip: text; -webkit-background-clip: text; color: transparent;">而Kairos，捕获子弹般的契机。</span>
+            </h1>
+            <p style="font-size: 1.1rem; color: #6B7280; max-width: 640px; margin: 0 auto 32px;">
+                Chronos是钟表的刻度。Kairos是转折的瞬间。<br>
+                用AI穿透噪音，在聪明钱异动、社群沸腾的时刻，为你捕捉Alpha爆发前的恰当时机。
+            </p>
+            <div style="display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; margin-bottom: 56px;">
+                <button class="btn-primary" onclick="openWaitlist()">🎯 抢先体验</button>
+                <button class="btn-secondary" onclick="scrollToDemo()">↓ 探索功能</button>
+            </div>
+
+            <div class="stats-flex" style="display: flex; justify-content: center; gap: 24px; flex-wrap: wrap;">
+                <div class="stat-badge"><div class="stat-number">∞</div><div style="font-size:0.85rem;">实时网络扫描</div></div>
+                <div class="stat-badge"><div class="stat-number">6D</div><div style="font-size:0.85rem;">AI六维评分</div></div>
+                <div class="stat-badge"><div class="stat-number">7+</div><div style="font-size:0.85rem;">主流链支持</div></div>
+                <div class="stat-badge"><div class="stat-number">0.1s</div><div style="font-size:0.85rem;">热点信号延迟</div></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- 新增：每日Twitter活跃度前5代币板块 -->
+    <section style="margin: 80px 0 60px;" id="twitter-section">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; margin-bottom: 32px;">
+            <div>
+                <h2 style="font-size: 1.8rem; font-weight: 700; display: inline-flex; align-items: center; gap: 10px;">
+                    <span style="font-size: 2rem;">🐦</span> 每日Twitter活跃度前5
+                </h2>
+                <p style="color: #6B7280; margin-top: 8px;">基于Twitter API实时统计的加密货币讨论热度排名</p>
+            </div>
+            <button class="refresh-btn" id="refreshTwitterBtn" onclick="refreshTwitterData()">
+                🔄 刷新数据
+            </button>
+        </div>
+
+        <div class="card-light" style="padding: 8px 24px 16px 24px;" id="twitterRankList">
+            <!-- 排行榜将通过JavaScript动态渲染 -->
+            <div style="text-align: center; padding: 40px; color: #9CA3AF;">
+                <div class="stat-number" style="font-size: 1.5rem; color: #9CA3AF;">⟳</div>
+                <p>加载中...</p>
+            </div>
+        </div>
+        <div style="margin-top: 16px; text-align: right; font-size: 0.7rem; color: #9CA3AF;">
+            <span id="lastUpdateTime"></span> | 数据基于Twitter公开API，每30分钟自动更新
+        </div>
+    </section>
+
+    <!-- 理念对比 Chronos vs Kairos -->
+    <section style="margin: 60px 0 60px;">
+        <div class="compare-grid">
+            <div class="card-compare-left" style="background: #F8F9FC; border-radius: 28px; padding: 32px; border: 1px solid #EEF2F6;">
+                <div style="font-size: 0.75rem; letter-spacing: 2px; color: #9CA3AF;">—————————— CHRONOS</div>
+                <p style="font-size: 1.3rem; font-weight: 600; margin: 16px 0 12px;">线性的 · 可预测的 · 被动的</p>
+                <p style="color: #6B7280;">K线、时间戳、历史数据。它说"什么时候发生"，却从不告诉你"该不该动"。</p>
+            </div>
+            <div class="card-compare-right" style="background: #FFFFFF; border-radius: 28px; padding: 32px; border: 1px solid #F59E0B20; box-shadow: 0 8px 24px rgba(0,0,0,0.04);">
+                <div style="color: #F59E0B; font-size: 0.75rem; letter-spacing: 2px;">✦✦✦ KAIROS ✦✦✦</div>
+                <p style="font-size: 1.3rem; font-weight: 600; margin: 16px 0 12px;">转折的 · 恰当时机 · 主动决策</p>
+                <p style="color: #1F2937;">智能资金异动，社群情绪爆发，AI推理出属于你的"子弹时刻"。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- 三大核心功能 与 Twitter榜 形成左右两栏布局 -->
+    <section style="margin: 60px 0 60px;">
+        <div style="text-align: center; margin-bottom: 48px;">
+            <h2 style="font-size: 2rem; font-weight: 700;">核心能力</h2>
+            <p style="color: #6B7280;">发现 · 扫描 · 预测 — AI 贯穿全流程</p>
+        </div>
+        <div class="features-grid">
+            <div class="card-light">
+                <div style="font-size: 2.5rem;">🔥</div>
+                <h3 style="font-size: 1.5rem; margin: 16px 0 8px;">市场热力榜</h3>
+                <p style="color: #4B5563;">跨链聚合所有潜力代币，综合AI热度指数排序列出。聪明钱动向、社交媒体爆发实时可见。</p>
+                <div><span class="feature-tag">实时更新</span><span class="feature-tag">跨链聚合</span></div>
+            </div>
+            <div class="card-light">
+                <div style="font-size: 2.5rem;">🧠</div>
+                <h3 style="font-size: 1.5rem; margin: 16px 0 8px;">AI深度扫描器</h3>
+                <p style="color: #4B5563;">粘贴任意合约地址 → 6维度评分报告，一键查风险。</p>
+                <div><span class="feature-tag">六维雷达</span><span class="feature-tag">安全检测</span></div>
+            </div>
+            <div class="card-light">
+                <div style="font-size: 2.5rem;">📡</div>
+                <h3 style="font-size: 1.5rem; margin: 16px 0 8px;">热点雷达</h3>
+                <p style="color: #4B5563;">预测24-48小时内潜力叙事和代币，输出「叙事风向标」和潜力榜TOP5。</p>
+                <div><span class="feature-tag">AI叙事聚类</span><span class="feature-tag">聪明钱先兆</span></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- AI深度扫描器 演示区 -->
+    <section style="background: #F8F9FC; border-radius: 48px; padding: 56px 32px; margin: 48px 0;">
+        <div style="text-align: center;">
+            <h3 style="font-size: 1.8rem; font-weight: 700;">试试我们的AI深度扫描器</h3>
+            <p style="color: #6B7280; margin-bottom: 32px;">输入任意合约地址，体验6维评分</p>
+            <div style="display: flex; gap: 12px; max-width: 640px; margin: 0 auto; flex-wrap: wrap; justify-content: center;">
+                <input type="text" id="demoContract" placeholder="例如: 0x... (演示示意)" style="flex:2; background: #FFFFFF; border: 1px solid #E5E7EB; border-radius: 48px; padding: 14px 20px; color: #1A1F2E; outline: none;" class="input-glow">
+                <button class="btn-primary" style="padding: 12px 28px;" onclick="simulateScan()">深度分析 →</button>
+            </div>
+            <div id="scanDemoResult" style="margin-top: 36px; text-align: left;"></div>
+        </div>
+    </section>
+
+    <!-- 候补名单 CTA -->
+    <section style="background: #FFFFFF; border-radius: 48px; padding: 56px 32px; text-align: center; margin: 48px 0; box-shadow: 0 1px 2px rgba(0,0,0,0.03); border: 1px solid #F0F2F5;">
+        <h3 style="font-size: 1.8rem; font-weight: 700;">捕获你的第一个Kairos时刻</h3>
+        <p style="margin: 16px auto; max-width: 480px; color: #6B7280;">抢先获得内测资格，第一时间体验AI预警与热力榜单。</p>
+        <div style="display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px;">
+            <input type="email" id="waitlistEmail" placeholder="你的邮箱地址" style="background: #F9FAFB; border: 1px solid #E5E7EB; border-radius: 48px; padding: 14px 24px; width: 300px; color: #1A1F2E; outline: none;" class="input-glow">
+            <button class="btn-primary" onclick="submitWaitlist()">加入候补名单 →</button>
+        </div>
+        <p style="margin-top: 20px; font-size: 0.75rem; color: #9CA3AF;">无需信用卡 · 随时取消 · 优先体验</p>
+        <p id="waitlistMsg" style="margin-top: 16px; font-size: 0.8rem; color: #10B981;"></p>
+    </section>
+
+    <!-- FAQ 简约区 -->
+    <section>
+        <h2 style="font-size: 1.8rem; font-weight: 700; text-align: center; margin-bottom: 48px;">常见问题</h2>
+        <div style="display: flex; flex-direction: column; gap: 28px; max-width: 780px; margin: 0 auto;">
+            <div><strong style="color: #F59E0B;">❓ Kairos 是免费的吗？</strong><br>内测期间完全免费，后续会提供免费版与高级订阅。</div>
+            <div><strong style="color: #F59E0B;">❓ 支持哪些链？</strong><br>ETH, BSC, Solana, Base, Arbitrum 等，持续扩展中。</div>
+            <div><strong style="color: #F59E0B;">❓ AI 评分靠谱吗？</strong><br>评分基于链上数据、社交情绪、持仓结构等实时指标，但DYOR永远是第一准则。</div>
+            <div><strong style="color: #F59E0B;">❓ Twitter活跃度数据如何获取？</strong><br>通过Twitter API v2搜索端点，统计代币符号/合约地址的讨论量，结合NLP情绪分析。</div>
+            <div><strong style="color: #F59E0B;">❓ 如何获取内测资格？</strong><br>留下邮箱，内测开放时会第一时间邮件通知。</div>
+        </div>
+    </section>
+
+    <footer>
+        <div style="display: flex; justify-content: space-between; flex-wrap: wrap; gap: 24px;">
+            <div>© 2026 Kairos — Capture the Moment.</div>
+            <div style="display: flex; gap: 32px;">
+                <span style="cursor:pointer;">𝕏 Twitter</span>
+                <span style="cursor:pointer;">Telegram</span>
+                <span style="cursor:pointer;">GitHub</span>
+            </div>
+        </div>
+        <div style="margin-top: 32px; font-size: 0.7rem; text-align: center;">所有AI分析均基于公开数据自动生成，不构成投资建议。加密交易风险极高，请自行研究决策。</div>
+    </footer>
+</div>
+
+<script>
+    // ==================== Twitter 活跃度模拟数据 ====================
+    // 定期刷新机制，模拟从 API 获取最新数据
+    // 后续可替换为真实的 Twitter API 调用
+    
+    let twitterData = {
+        lastUpdate: null,
+        tokens: []
+    };
+
+    // 模拟代币池（真实场景应从 API 获取）
+    const mockTokenPool = [
+        { symbol: "PENGUIN", name: "Penguin", logo: "🐧", mentions: 28470, trend: "+23.5%", contract: "0x..." },
+        { symbol: "BILL", name: "Bill Network", logo: "📄", mentions: 21450, trend: "+15.2%", contract: "0x..." },
+        { symbol: "WIF", name: "DogWifHat", logo: "🐕", mentions: 18720, trend: "+8.7%", contract: "0x..." },
+        { symbol: "POPCAT", name: "Popcat", logo: "🐱", mentions: 15340, trend: "+5.3%", contract: "0x..." },
+        { symbol: "MOODENG", name: "Moodeng", logo: "🦛", mentions: 12890, trend: "+12.1%", contract: "0x..." },
+        { symbol: "GOAT", name: "Goatseus Maximus", logo: "🐐", mentions: 11200, trend: "+3.2%", contract: "0x..." },
+        { symbol: "MYRO", name: "Myro", logo: "🐕", mentions: 9850, trend: "-2.4%", contract: "0x..." },
+        { symbol: "BONK", name: "Bonk", logo: "🐕", mentions: 8760, trend: "-5.1%", contract: "0x..." },
+        { symbol: "MOTHER", name: "Mother", logo: "👩", mentions: 7230, trend: "+18.6%", contract: "0x..." }
+    ];
+
+    // 随机生成排名（模拟每日变化）
+    function generateRandomRanking() {
+        // 复制一份并随机打乱
+        const shuffled = [...mockTokenPool];
+        for (let i = shuffled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+        }
+        // 取前5，并微调提及数以模拟实时波动
+        const top5 = shuffled.slice(0, 5).map((token, idx) => {
+            // 随机波动 -5% ~ +15%
+            const variance = 0.95 + Math.random() * 0.2;
+            const adjustedMentions = Math.floor(token.mentions * variance);
+            // 随机生成趋势
+            const trends = ["+3.2%", "+5.8%", "+12.4%", "+1.5%", "+8.9%", "-1.2%", "+15.3%", "+2.1%", "+7.6%"];
+            const randomTrend = trends[Math.floor(Math.random() * trends.length)];
+            return {
+                ...token,
+                mentions: adjustedMentions,
+                trend: randomTrend,
+                rank: idx + 1
+            };
+        });
+        // 按提及数排序
+        top5.sort((a, b) => b.mentions - a.mentions);
+        top5.forEach((t, i) => t.rank = i + 1);
+        return top5;
+    }
+
+    // 渲染 Twitter 排行榜
+    function renderTwitterRanking(tokens) {
+        const container = document.getElementById('twitterRankList');
+        if (!tokens || tokens.length === 0) {
+            container.innerHTML = `<div style="text-align: center; padding: 40px; color: #9CA3AF;">暂无数据，请稍后刷新</div>`;
+            return;
+        }
+        
+        const html = `
+            <div style="display: flex; flex-direction: column;">
+                ${tokens.map(token => `
+                    <div class="twitter-rank-item">
+                        <div style="display: flex; align-items: center; gap: 16px; flex: 2;">
+                            <div class="rank-number ${token.rank === 1 ? 'top1' : token.rank === 2 ? 'top2' : token.rank === 3 ? 'top3' : ''}">
+                                ${token.rank}
+                            </div>
+                            <div class="token-logo" style="background: linear-gradient(135deg, #FEF3C7, #FFEDD5);">
+                                ${token.logo}
+                            </div>
+                            <div>
+                                <div style="font-weight: 700; font-size: 1rem;">${token.symbol}</div>
+                                <div style="font-size: 0.7rem; color: #9CA3AF;">${token.name}</div>
+                            </div>
+                        </div>
+                        <div style="flex: 1; text-align: right;">
+                            <div class="mention-count">${token.mentions.toLocaleString()}</div>
+                            <div class="${token.trend.startsWith('+') ? 'trend-up' : 'trend-down'}">
+                                ${token.trend} 
+                                ${token.trend.startsWith('+') ? '↑' : '↓'}
+                            </div>
+                        </div>
+                        <div style="flex-shrink: 0; margin-left: 16px;">
+                            <button class="refresh-btn" style="padding: 6px 16px; font-size: 0.7rem;" onclick="alert('完整功能即将开放：查看 ${token.symbol} 详细分析')">
+                                分析
+                            </button>
+                        </div>
+                    </div>
+                `).join('')}
+            </div>
+        `;
+        container.innerHTML = html;
+    }
+
+    // 刷新数据（模拟 API 调用）
+    function refreshTwitterData() {
+        const container = document.getElementById('twitterRankList');
+        container.innerHTML = `<div style="text-align: center; padding: 40px; color: #9CA3AF;"><div class="stat-number" style="font-size: 1.5rem; color: #9CA3AF;">⟳</div><p>正在获取最新数据...</p></div>`;
+        
+        // 模拟网络延迟
+        setTimeout(() => {
+            const newRanking = generateRandomRanking();
+            twitterData.tokens = newRanking;
+            twitterData.lastUpdate = new Date();
+            renderTwitterRanking(newRanking);
+            updateLastUpdateTime();
+        }, 800);
+    }
+
+    function updateLastUpdateTime() {
+        const timeSpan = document.getElementById('lastUpdateTime');
+        if (twitterData.lastUpdate) {
+            timeSpan.innerText = `最后更新: ${twitterData.lastUpdate.toLocaleTimeString()}`;
+        } else {
+            timeSpan.innerText = `最后更新: 刚刚`;
+        }
+    }
+
+    // 候补名单存储
+    function submitWaitlist() {
+        const email = document.getElementById('waitlistEmail').value.trim();
+        const msgDiv = document.getElementById('waitlistMsg');
+        if (!email || !email.includes('@')) {
+            msgDiv.innerText = '请输入有效的邮箱地址';
+            msgDiv.style.color = '#EF4444';
+            return;
+        }
+        let existing = localStorage.getItem('kairos_waitlist');
+        let list = existing ? JSON.parse(existing) : [];
+        if(!list.includes(email)){
+            list.push(email);
+            localStorage.setItem('kairos_waitlist', JSON.stringify(list));
+        }
+        msgDiv.innerText = '✅ 已加入候补名单，上线前我们将通知你！';
+        msgDiv.style.color = '#10B981';
+        document.getElementById('waitlistEmail').value = '';
+        setTimeout(() => msgDiv.innerText = '', 4000);
+    }
+
+    function openWaitlist() {
+        document.getElementById('waitlistEmail').focus();
+        window.scrollTo({top: document.querySelector('.container section:last-of-type').offsetTop - 120, behavior: 'smooth'});
+    }
+
+    function scrollToDemo() {
+        document.querySelector('.features-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    // AI扫描模拟
+    function simulateScan() {
+        const inputAddr = document.getElementById('demoContract').value.trim();
+        const resultDiv = document.getElementById('scanDemoResult');
+        if (!inputAddr) {
+            resultDiv.innerHTML = `<div style="background:#F8F9FC; border-radius: 32px; padding:24px; text-align:center; color:#6B7280;">⚠️ 请输入合约地址模拟预览（完整功能即将开放）</div>`;
+            return;
+        }
+        const scores = {
+            narrative: Math.floor(Math.random() * 30) + 60,
+            community: Math.floor(Math.random() * 35) + 55,
+            holder: Math.floor(Math.random() * 30) + 50,
+            liquidity: Math.floor(Math.random() * 30) + 55,
+            catalyst: Math.floor(Math.random() * 35) + 45,
+            security: Math.floor(Math.random() * 30) + 65,
+        };
+        const total = Math.round((scores.narrative + scores.community + scores.holder + scores.liquidity + scores.catalyst + scores.security)/6);
+        resultDiv.innerHTML = `
+            <div style="background:#FFFFFF; border-radius: 32px; padding: 28px; border: 1px solid #F0F2F5;">
+                <div style="text-align:center; margin-bottom:24px;">
+                    <div style="font-size:0.75rem; color:#6B7280;">AI综合评分</div>
+                    <div style="font-size:3rem; font-weight:800; color:${total >= 70 ? '#10B981' : total >= 50 ? '#F59E0B' : '#EF4444'};">${total}<span style="font-size:1.5rem;">/100</span></div>
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(3,1fr); gap:16px;">
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">叙事评分</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#F59E0B;">${scores.narrative}</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">社区热度</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#3B82F6;">${scores.community}</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">筹码分布</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#8B5CF6;">${scores.holder}</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">流动性</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#10B981;">${scores.liquidity}</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">催化剂</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#EC4899;">${scores.catalyst}</div>
+                    </div>
+                    <div style="text-align:center; padding:16px; background:#F8F9FC; border-radius:16px;">
+                        <div style="font-size:0.7rem; color:#6B7280;">安全评分</div>
+                        <div style="font-size:1.5rem; font-weight:700; color:#6B7280;">${scores.security}</div>
+                    </div>
+                </div>
+                <div style="margin-top:20px; text-align:center; font-size:0.75rem; color:#9CA3AF;">
+                    ⚠️ 演示模式 · 输入真实合约地址获取完整分析
+                </div>
+            </div>
+        `;
+    }
+
+    // 页面加载完成后初始化
+    document.addEventListener('DOMContentLoaded', function() {
+        // 初始化Twitter排行榜
+        const initialRanking = generateRandomRanking();
+        twitterData.tokens = initialRanking;
+        twitterData.lastUpdate = new Date();
+        renderTwitterRanking(initialRanking);
+        updateLastUpdateTime();
+        
+        // 定时刷新（每5分钟）
+        setInterval(() => {
+            refreshTwitterData();
+        }, 5 * 60 * 1000);
+    });
+</script>
+</body>
+</html>
