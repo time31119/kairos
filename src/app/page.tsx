@@ -68,42 +68,41 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
-  // 币安Alpha专区代币列表（官方列表）
+  // 币安Alpha专区代币列表（确认在Alpha专区的代币）
   const BINANCE_ALPHA_TOKENS = [
     { id: 'jito', symbol: 'JTO', name: 'Jito', category: 'DeFi' },
-    { id: 'worldcoin-wld', symbol: 'WLD', name: 'Worldcoin', category: 'AI' },
-    { id: 'arkham', symbol: 'ARKM', name: 'Arkham', category: 'AI' },
     { id: 'celestia', symbol: 'TIA', name: 'Celestia', category: 'Infrastructure' },
-    { id: 'babydoge-coin', symbol: 'BABYDOGE', name: 'BabyDoge', category: 'Meme' },
     { id: 'dogwifcoin', symbol: 'WIF', name: 'DogWifHat', category: 'Meme' },
-    { id: 'popcat', symbol: 'POPCAT', name: 'Popcat', category: 'Meme' },
-    { id: 'ponke', symbol: 'PONKE', name: 'Ponke', category: 'Meme' },
     { id: 'pepe', symbol: 'PEPE', name: 'Pepe', category: 'Meme' },
     { id: 'brett', symbol: 'BRETT', name: 'Brett', category: 'Meme' },
-    { id: 'flox', symbol: 'FLOX', name: 'FLOX', category: 'AI' },
-    { id: 'syrup', symbol: 'SYRUP', name: 'Syrup', category: 'Meme' },
+    { id: 'popcat', symbol: 'POPCAT', name: 'Popcat', category: 'Meme' },
+    { id: 'ponke', symbol: 'PONKE', name: 'Ponke', category: 'Meme' },
+    { id: 'floki', symbol: 'FLOKI', name: 'FLOKI', category: 'Meme' },
+    { id: 'shiba-inu', symbol: 'SHIB', name: 'Shiba Inu', category: 'Meme' },
+    { id: '本位币', symbol: 'BEN', name: 'Ben', category: 'Meme' },
   ];
   
   // 提取ID列表用于API调用
   const BINANCE_ALPHA_IDS = BINANCE_ALPHA_TOKENS.map(t => t.id);
   
-  // 币安Alpha候选池 - 可能进入专区的潜力代币（排除主流和已入选）
+  // 币安Alpha候选池 - 可能进入专区的潜力Meme代币
   const ALPHA_CANDIDATES = [
-    { id: 'virtual-protocol', symbol: 'VIRTUAL', name: 'Virtual Protocol', category: 'AI Agent', excludeMajor: true },
-    { id: 'ai16z', symbol: 'AI16Z', name: 'ai16z', category: 'AI', excludeMajor: true },
-    { id: 'goat', symbol: 'GOAT', name: 'Goatseus Maximus', category: 'Meme', excludeMajor: true },
-    { id: 'fwog', symbol: 'FWOG', name: 'FWOG', category: 'Meme', excludeMajor: true },
-    { id: 'moodeng', symbol: 'MOODENG', name: 'Moodeng', category: 'Meme', excludeMajor: true },
-    { id: 'chill guy', symbol: 'CHILLGUY', name: 'Chill Guy', category: 'Meme', excludeMajor: true },
-    { id: 'pengu', symbol: 'PENGU', name: 'Penguin', category: 'Meme', excludeMajor: true },
-    { id: 'pop', symbol: 'POP', name: 'Pop', category: 'Meme', excludeMajor: true },
-    { id: 'bill', symbol: 'BILL', name: 'Bill', category: 'Meme', excludeMajor: true },
-    { id: 'PNUT', symbol: 'PNUT', name: 'Peanut', category: 'Meme', excludeMajor: true },
-    { id: 'retardio', symbol: 'RETRY', name: 'Retardio', category: 'Meme', excludeMajor: true },
-    { id: 'SLERF', symbol: 'SLERF', name: 'Slerf', category: 'Meme', excludeMajor: true },
-    { id: 'dog-in-me', symbol: 'DOG', name: 'Dog', category: 'Meme', excludeMajor: true },
-    { id: 'AUD', symbol: 'AUD', name: 'Australian Dog', category: 'Meme', excludeMajor: true },
-    { id: 'michi', symbol: 'MICHI', name: 'Michi', category: 'Meme', excludeMajor: true },
+    // 高热度Meme候选
+    { id: 'goat', symbol: 'GOAT', name: 'Goatseus Maximus', category: 'Meme' },
+    { id: 'fwog', symbol: 'FWOG', name: 'FWOG', category: 'Meme' },
+    { id: 'moodeng', symbol: 'MOODENG', name: 'Moodeng', category: 'Meme' },
+    { id: 'chill-guy', symbol: 'CHILLGUY', name: 'Chill Guy', category: 'Meme' },
+    { id: 'pingu', symbol: 'PINGU', name: 'Pingu', category: 'Meme' },
+    { id: 'pop', symbol: 'POP', name: 'Pop', category: 'Meme' },
+    { id: 'PNUT', symbol: 'PNUT', name: 'Peanut', category: 'Meme' },
+    { id: 'retardio', symbol: 'RETRY', name: 'Retardio', category: 'Meme' },
+    { id: 'slerf', symbol: 'SLERF', name: 'Slerf', category: 'Meme' },
+    { id: 'michi', symbol: 'MICHI', name: 'Michi', category: 'Meme' },
+    { id: 'act', symbol: 'ACT', name: 'Act', category: 'Meme' },
+    { id: 'degen', symbol: 'DEGEN', name: 'Degen', category: 'Meme' },
+    { id: 'foxy', symbol: 'FOXY', name: 'Foxy', category: 'Meme' },
+    { id: 'apx', symbol: 'APX', name: 'APX', category: 'Meme' },
+    { id: 'zerebro', symbol: 'ZEREBRO', name: 'Zerebro', category: 'AI/Meme' },
   ];
   
   // 主流代币黑名单 - 排除这些
