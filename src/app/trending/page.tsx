@@ -110,22 +110,12 @@ export default function TrendingPage() {
   const [lastUpdate, setLastUpdate] = useState('--:--:--');
 
   useEffect(() => {
-    const updateData = async () => {
-      try {
-        const response = await fetch('/api/alpha-ranking?ts=' + Date.now());
-        const result = await response.json();
-        
-        if (result.success && result.opportunities && result.opportunities.length > 0) {
-          setTokens(result.opportunities);
-        }
-        setLastUpdate(new Date().toLocaleTimeString());
-      } catch (e) {
-        setLastUpdate(new Date().toLocaleTimeString());
-      }
+    // 每分钟更新时间
+    const updateTime = () => {
+      setLastUpdate(new Date().toLocaleTimeString());
     };
-    
-    updateData();
-    const interval = setInterval(updateData, 30000);
+    updateTime();
+    const interval = setInterval(updateTime, 60000);
     return () => clearInterval(interval);
   }, []);
 
