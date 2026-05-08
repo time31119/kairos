@@ -1,156 +1,91 @@
 import { NextResponse } from 'next/server';
 
-// 币安Alpha专区代币配置（Symbol -> 代币ID映射）
-const ALPHA_SYMBOLS: Record<string, { coingecko: string; name: string; chain: string }> = {
-  'GOAT': { coingecko: 'goatseusd', name: 'Goatseus Maximus', chain: 'SOL' },
-  'NEIRO': { coingecko: 'neiro-inu', name: 'Neiro Inu', chain: 'ETH' },
-  'FWOG': { coingecko: 'fwog', name: 'FWOG', chain: 'SOL' },
-  'PNUT': { coingecko: 'peanut-the-squirrel', name: 'Peanut the Squirrel', chain: 'ETH' },
-  'POPCAT': { coingecko: 'popcat', name: 'Popcat', chain: 'SOL' },
-  'MOODENG': { coingecko: 'moodeng', name: 'Moo Deng', chain: 'ETH' },
-  'WIF': { coingecko: 'dogwifcoin', name: 'dogwifhat', chain: 'SOL' },
-  'BRETT': { coingecko: 'brett', name: 'Brett', chain: 'BASE' },
-  'PONKE': { coingecko: 'ponke', name: 'Ponke', chain: 'SOL' },
-  'SLERF': { coingecko: 'slerf', name: 'Slerf', chain: 'SOL' },
-};
-
-interface CoinData {
-  id: string;
-  symbol: string;
-  name: string;
-  current_price: number;
-  price_change_percentage_24h: number;
-  price_change_percentage_1h_in_currency?: number;
-  total_volume: number;
-  market_cap: number;
-}
+// 币安Alpha专区代币（来源：binance.com/en/alphaevents）
+// ⚠️ 名单动态变化，使用前请访问官方渠道核实最新状态
+const ALPHA_TOKENS = [
+  { symbol: 'ONDO', id: 'ondo-finance', name: 'Ondo', chain: 'ETH', category: 'RWA', desc: '真实世界资产' },
+  { symbol: 'VIRTUAL', id: 'virtual-protocol', name: 'Virtual Protocol', chain: 'ETH', category: 'AI Agent', desc: 'AI代理协议' },
+  { symbol: 'AERO', id: 'aerodrome-finance', name: 'Aerodrome', chain: 'BASE', category: 'DeFi', desc: 'Base链DEX' },
+  { symbol: 'FARTCOIN', id: 'fartcoin', name: 'Fartcoin', chain: 'SOL', category: 'Meme/AI', desc: 'Meme+AI概念' },
+  { symbol: 'MORPHO', id: 'morpho-protocol', name: 'Morpho', chain: 'ETH', category: 'DeFi', desc: 'DeFi借贷协议' },
+  { symbol: 'DRIFT', id: 'drift-protocol', name: 'Drift Protocol', chain: 'SOL', category: 'DeFi', desc: '永续合约' },
+  { symbol: 'POPCAT', id: 'popcat', name: 'Popcat', chain: 'SOL', category: 'Meme', desc: 'Meme代币' },
+  { symbol: 'MOG', id: 'mog-coin', name: 'Mog', chain: 'ETH', category: 'Meme', desc: 'Meme代币' },
+  { symbol: 'AGT', id: 'agt-coin', name: 'AGT', chain: 'BNB', category: 'AI', desc: 'AI数据平台' },
+];
 
 export async function GET() {
   try {
-    // 1. 尝试 Bybit API（通常更稳定）
-    let priceData: Record<string, number> = {};
-    let changeData: Record<string, number> = {};
-    let volumeData: Record<string, number> = {};
-    let source = 'bybit';
-
-    const symbols = Object.keys(ALPHA_SYMBOLS).map(s => `${s}USDT`);
+    const ids = ALPHA_TOKENS.map(t => t.id).join(',');
+    const response = await fetch(
+      `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`,
+      { next: { revalidate: 30 } }
+    );
     
-    try {
-      const bybitResponse = await fetch(
-        `https://api.bybit.com/v5/market/tickers?category=spot&symbol=${symbols.join(',')}`,
-        { signal: AbortSignal.timeout(5000) }
-      );
-      
-      if (bybitResponse.ok) {
-        const bybitData = await bybitResponse.json();
-        if (bybitData.retCode === 0 && bybitData.result?.list) {
-          bybitData.result.list.forEach((item: any) => {
-            const baseSymbol = item.symbol.replace('USDT', '');
-            if (ALPHA_SYMBOLS[baseSymbol]) {
-              priceData[baseSymbol] = parseFloat(item.lastPrice || '0');
-              changeData[baseSymbol] = parseFloat(item.price24hPcnt || '0') * 100;
-              volumeData[baseSymbol] = parseFloat(item.volume24h || '0') * parseFloat(item.lastPrice || '1');
-            }
-          });
-        }
-      }
-    } catch (e) {
-      console.log('Bybit failed, trying alternative...');
+    if (!response.ok) {
+      throw new Error('CoinGecko API failed');
     }
-
-    // 2. 如果Bybit失败，使用备用静态数据
-    if (Object.keys(priceData).length === 0) {
-      source = 'fallback';
-      const fallbackPrices: Record<string, number> = {
-        'WIF': 3.25, 'GOAT': 1.15, 'NEIRO': 0.0028, 'FWOG': 0.042, 'PNUT': 0.58,
-        'POPCAT': 1.05, 'MOODENG': 0.0022, 'BRETT': 0.098, 'PONKE': 0.055, 'SLERF': 0.42
-      };
-      const fallbackChanges: Record<string, number> = {
-        'WIF': 12.5, 'GOAT': 8.3, 'NEIRO': 15.7, 'FWOG': -3.2, 'PNUT': 22.1,
-        'POPCAT': 6.8, 'MOODENG': 18.5, 'BRETT': -1.5, 'PONKE': 9.6, 'SLERF': -5.8
-      };
-      const fallbackVolumes: Record<string, number> = {
-        'WIF': 280000000, 'GOAT': 185000000, 'NEIRO': 95000000, 'FWOG': 42000000, 'PNUT': 156000000,
-        'POPCAT': 89000000, 'MOODENG': 128000000, 'BRETT': 67000000, 'PONKE': 95000000, 'SLERF': 38000000
-      };
-      priceData = fallbackPrices;
-      changeData = fallbackChanges;
-      volumeData = fallbackVolumes;
-    }
-
-    // 3. 构建返回数据
-    const result = Object.entries(ALPHA_SYMBOLS).map(([symbol, config], index) => {
-      const price = priceData[symbol] || 0;
-      const change24h = changeData[symbol] || 0;
-      const volume = volumeData[symbol] || 0;
+    
+    const priceData = await response.json();
+    
+    const opportunities = ALPHA_TOKENS.map((t, i) => {
+      const coinData = priceData[t.id];
+      const price = coinData?.usd || 0;
+      const change = coinData?.usd_24h_change || 0;
+      const volume = coinData?.usd_24h_vol || 10000000;
       
-      // Kairos评分计算
-      const momentum = Math.min(Math.max(change24h * 2, -20), 40);
-      const volumeScore = Math.min((volume / 2e8) * 60, 60);
-      const alphaScore = Math.round(momentum + volumeScore);
+      // Kairos评分
+      const changeScore = Math.min(Math.max(change + 10, 0) * 3, 50);
+      const volumeScore = Math.min(Math.log10(volume + 1) * 2, 30);
+      const momentumScore = change > 0 ? Math.min(change * 2, 20) : Math.max(20 + change, 0);
+      const kairosScore = Math.round(changeScore + volumeScore + momentumScore);
       
-      // 信号判断
-      let signal = 'watch';
-      let signals: string[] = ['正常'];
-      if (alphaScore >= 70) {
-        signal = 'strong';
-        signals = ['强势信号', '高动量', '交易活跃'];
-      } else if (alphaScore >= 50) {
-        signal = 'moderate';
-        signals = ['温和上涨', '值得关注'];
-      } else if (change24h < 0) {
-        signal = 'watch';
-        signals = ['回调中', '观望'];
-      }
-
-      // 交易计划
-      const entry = price * 1.0;
-      const target = price * (1 + Math.abs(change24h) / 100 + 0.15);
-      const stopLoss = price * (1 - 0.08);
-
+      const entry = price;
+      const target = price * (1 + Math.abs(change) / 100 + 0.05);
+      const stopLoss = price * (1 - Math.abs(change) / 200 - 0.03);
+      
+      let signal: 'strong' | 'watch' | 'wait' = 'wait';
+      let signalText = '暂无明显信号';
+      if (kairosScore >= 70) { signal = 'strong'; signalText = change > 0 ? '持续上涨趋势' : '超跌反弹信号'; }
+      else if (kairosScore >= 40) { signal = 'watch'; signalText = '需关注突破关键位'; }
+      
       return {
-        rank: index + 1,
-        symbol,
-        name: config.name,
-        chain: config.chain,
-        price: `$${price.toFixed(price < 0.01 ? 6 : price < 1 ? 4 : 2)}`,
-        priceValue: price,
-        priceChange24h: change24h,
-        priceChange1h: change24h / 4,
-        volume24h: volume,
-        alphaScore,
+        rank: i + 1,
+        symbol: t.symbol,
+        name: t.name,
+        chain: t.chain,
+        category: t.category,
+        desc: t.desc,
+        price: price.toFixed(price > 1 ? 2 : 6),
+        priceChange24h: change.toFixed(2),
+        volume24h: volume.toFixed(0),
+        kairosScore,
         signal,
-        signals,
-        smartMoneyScore: Math.round(alphaScore * 0.9),
+        signalText,
         tradingPlan: {
-          entry: entry.toFixed(entry < 0.01 ? 6 : entry < 1 ? 4 : 2),
-          target: target.toFixed(target < 0.01 ? 6 : target < 1 ? 4 : 2),
-          stopLoss: stopLoss.toFixed(stopLoss < 0.01 ? 6 : stopLoss < 1 ? 4 : 2),
-          riskReward: `${((target - entry) / (entry - stopLoss)).toFixed(1)}:1`,
+          entry: entry.toFixed(price > 1 ? 2 : 6),
+          target: target.toFixed(price > 1 ? 2 : 6),
+          stopLoss: stopLoss.toFixed(price > 1 ? 2 : 6),
+          riskReward: ((target - entry) / Math.abs(entry - stopLoss)).toFixed(2),
         },
-        source,
       };
     });
-
-    // 按Alpha评分排序
-    result.sort((a, b) => b.alphaScore - a.alphaScore);
-    result.forEach((item, index) => item.rank = index + 1);
-
+    
+    // 按Kairos评分排序
+    opportunities.sort((a, b) => b.kairosScore - a.kairosScore);
+    opportunities.forEach((o, i) => { o.rank = i + 1; });
+    
     return NextResponse.json({
       success: true,
-      source,
-      data: result,
-      updated: new Date().toISOString(),
+      opportunities,
+      updatedAt: new Date().toISOString(),
+      source: 'binance.com/en/alphaevents',
     });
-
   } catch (error) {
-    console.error('Alpha Ranking API Error:', error);
-    
-    // 返回错误信息
     return NextResponse.json({
       success: false,
       error: 'Failed to fetch data',
-      data: [],
-    }, { status: 500 });
+      updatedAt: new Date().toISOString(),
+    });
   }
 }
