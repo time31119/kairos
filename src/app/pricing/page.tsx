@@ -106,7 +106,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <h3 className="text-lg font-bold text-white mb-2">专业版</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-blue-400">¥299</span>
+                <span className="text-3xl font-extrabold text-blue-400">$299</span>
                 <span className="text-slate-500">/月</span>
               </div>
               <div className="text-xs text-slate-500 mt-1">或 ¥2499/年，省 ¥590</div>
@@ -137,7 +137,7 @@ export default function PricingPage() {
             <div className="mb-6">
               <h3 className="text-lg font-bold text-white mb-2">团队版</h3>
               <div className="flex items-baseline gap-1">
-                <span className="text-3xl font-extrabold text-cyan-400">¥99</span>
+                <span className="text-3xl font-extrabold text-cyan-400">$99</span>
                 <span className="text-slate-500">/席位/月</span>
               </div>
               <div className="text-xs text-slate-500 mt-1">5席位起购，年付85折</div>
