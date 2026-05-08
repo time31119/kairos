@@ -47,27 +47,35 @@ export default function TrendingPage() {
       setLoading(true);
       setError(null);
       
-      // 从币安API获取实时数据
-      const responses = await Promise.allSettled(
-        ALPHA_SYMBOLS.map(s => 
-          fetch(`https://api.binance.com/api/v3/ticker/24hr?symbol=${s.symbol}`)
-            .then(r => r.json())
-        )
+      // 前端直接调用支持CORS的API
+      const response = await fetch(
+        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=goatseusd,neiro,fwog,peanut-the-squirrel,popcat,moodeng,dogwifcoin,brett,ponke,slerf&order=volume_desc&sparkline=false&price_change_percentage=24h'
       );
-
-      const validData = responses
-        .filter((r): r is PromiseFulfilledResult<any> => r.status === 'fulfilled')
-        .map((r, i) => {
-          const data = r.value;
-          const info = ALPHA_SYMBOLS[i];
-          
-          if (!data.price || data.price === '0') return null;
-
-          const price = parseFloat(data.price);
-          const change24h = parseFloat(data.priceChangePercent) || 0;
-          const volume = parseFloat(data.quoteVolume) || 0;
-          const high24h = parseFloat(data.highPrice) || price * 1.05;
-          const low24h = parseFloat(data.lowPrice) || price * 0.95;
+      const binceData: Array<{
+        id: string;
+        symbol: string;
+        name: string;
+        current_price: number;
+        price_change_percentage_24h: number;
+        total_volume: number;
+        high_24h: number;
+        low_24h: number;
+      }> = await response.json();
+      
+      if (!Array.isArray(binceData)) {
+        throw new Error('Invalid data');
+      }
+      
+      // 映射到TokenData
+      const validData = binceData
+        .filter(t => t.current_price > 0)
+        .map((coin) => {
+          const price = coin.current_price;
+          const change24h = coin.price_change_percentage_24h || 0;
+          const volume = coin.total_volume || 0;
+          const high24h = coin.high_24h || price * 1.05;
+          const low24h = coin.low_24h || price * 0.95;
+          const symbol = coin.symbol.toUpperCase();
 
           // Kairos评分
           let score = 50;
@@ -103,8 +111,8 @@ export default function TrendingPage() {
           const riskReward = ((target - entry) / (entry - stopLoss)).toFixed(2);
 
           return {
-            symbol: info.symbol.replace('USDT', ''),
-            name: info.name,
+            symbol,
+            name: coin.name,
             price,
             priceChange24h: change24h,
             volume24h: volume,
