@@ -5,44 +5,51 @@ import { ArrowLeft, Users, Target, Zap, Heart } from 'lucide-react';
 
 export default function AboutPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
       {/* 导航栏 */}
-      <nav className="border-b" style={{ borderColor: '#1E293B', backgroundColor: 'rgba(15, 23, 42, 0.95)', backdropFilter: 'blur(12px)' }}>
-        <div className="max-w-6xl mx-auto px-6 py-5 flex justify-between items-center flex-wrap gap-4">
-          <Link href="/" className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #F59E0B, #FBBF24)' }}>
-              <span className="text-white font-bold text-lg">K</span>
+      <nav className="border-b border-blue-900/30 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-2xl font-bold text-white">
+                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                  Kairos
+                </span>
+              </Link>
+              <span className="text-xs text-blue-400/60 bg-blue-500/10 px-2 py-1 rounded">
+                Alpha Discovery
+              </span>
             </div>
-            <span className="text-xl font-bold" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>KAIROS</span>
-          </Link>
-          <div className="flex gap-8 items-center flex-wrap">
-            <Link href="/product" className="transition-colors hover:text-amber-400" style={{ color: '#94A3B8' }}>产品</Link>
-            <Link href="/pricing" className="transition-colors hover:text-amber-400" style={{ color: '#94A3B8' }}>定价</Link>
-            <Link href="/about" className="font-medium" style={{ color: '#F59E0B' }}>关于</Link>
-            <Link href="/resources" className="transition-colors hover:text-amber-400" style={{ color: '#94A3B8' }}>资源</Link>
-            <button
-              onClick={() => document.getElementById('waitlist')?.scrollIntoView({ behavior: 'smooth' })}
-              className="px-5 py-2 rounded-full text-sm font-semibold transition-all hover:scale-105"
-              style={{ backgroundColor: '#F59E0B', color: '#FFFFFF' }}
-            >
-              内测预约
-            </button>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link href="/product" className="text-slate-400 hover:text-white transition">
+                产品
+              </Link>
+              <Link href="/pricing" className="text-slate-400 hover:text-white transition">
+                定价
+              </Link>
+              <Link href="/about" className="text-blue-400 font-medium">
+                关于
+              </Link>
+              <Link href="/resources" className="text-slate-400 hover:text-white transition">
+                资源
+              </Link>
+            </div>
           </div>
         </div>
       </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <Link href="/" className="inline-flex items-center gap-2 mb-8 transition-colors hover:text-amber-400" style={{ color: '#64748B' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <Link href="/" className="inline-flex items-center gap-2 mb-8 text-slate-400 hover:text-white transition">
           <ArrowLeft className="w-4 h-4" /> 返回首页
         </Link>
 
         {/* Hero */}
         <div className="text-center mb-20">
-          <h1 className="text-5xl font-bold mb-6" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>
+          <h1 className="text-5xl font-bold mb-6 text-white">
             关于 Kairos
           </h1>
-          <p className="text-xl max-w-3xl mx-auto" style={{ color: '#94A3B8' }}>
-            我们相信，在加密货币市场中，<span className="font-semibold" style={{ color: '#F59E0B' }}>时机就是一切</span>。
+          <p className="text-xl max-w-3xl mx-auto text-slate-400">
+            我们相信，在加密货币市场中，<span className="font-semibold text-blue-400">时机就是一切</span>。
             Kairos 致力于用 AI 技术帮助用户识别那些稍纵即逝的投资机会。
           </p>
         </div>
@@ -50,8 +57,8 @@ export default function AboutPage() {
         {/* 品牌故事 */}
         <div className="grid md:grid-cols-2 gap-12 mb-20">
           <div>
-            <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>我们的故事</h2>
-            <div className="space-y-4" style={{ color: '#94A3B8' }}>
+            <h2 className="text-2xl font-bold mb-6 text-white">我们的故事</h2>
+            <div className="space-y-4 text-slate-400">
               <p>
                 2024 年初，我们团队的几位成员在 DeFi 热潮中损失惨重。不是因为缺乏信息，而是因为信息太多、太杂、太滞后。
               </p>
@@ -67,14 +74,14 @@ export default function AboutPage() {
             </div>
           </div>
           <div>
-            <h2 className="text-2xl font-bold mb-6" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>我们的使命</h2>
-            <div className="p-8 rounded-2xl" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
-              <Target className="w-12 h-12 mb-4" style={{ color: '#F59E0B' }} />
-              <p className="text-lg mb-4" style={{ color: '#F1F5F9' }}>
-                用 AI 技术<span className="font-semibold" style={{ color: '#F59E0B' }}> democratize alpha</span>，
+            <h2 className="text-2xl font-bold mb-6 text-white">我们的使命</h2>
+            <div className="p-8 rounded-2xl bg-slate-800/50 border border-blue-900/30">
+              <Target className="w-12 h-12 mb-4 text-blue-400" />
+              <p className="text-lg mb-4 text-white">
+                用 AI 技术<span className="font-semibold text-blue-400"> democratize alpha</span>，
                 让每一个普通投资者都能在关键时刻做出正确的决策。
               </p>
-              <p style={{ color: '#94A3B8' }}>
+              <p className="text-slate-400">
                 我们希望打破信息不对称，让机构投资者和散户站在同一起跑线上。无论你是刚入门的新手还是经验丰富的老手，Kairos 都能帮助你更好地把握时机。
               </p>
             </div>
@@ -83,7 +90,7 @@ export default function AboutPage() {
 
         {/* 价值观 */}
         <div className="mb-20">
-          <h2 className="text-2xl font-bold text-center mb-10" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>我们的价值观</h2>
+          <h2 className="text-2xl font-bold text-center mb-10 text-white">我们的价值观</h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { icon: Zap, title: '速度', desc: '在信息战场上，速度就是生命。我们追求极致的信号延迟。' },
@@ -91,10 +98,10 @@ export default function AboutPage() {
               { icon: Users, title: '公平', desc: '让机构级工具为每个普通投资者所用。' },
               { icon: Heart, title: '透明', desc: '数据来源清晰，分析逻辑公开，风险提示醒目。' },
             ].map((value, i) => (
-              <div key={i} className="p-6 rounded-xl text-center" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
-                <value.icon className="w-10 h-10 mx-auto mb-4" style={{ color: '#F59E0B' }} />
-                <h3 className="font-semibold mb-2" style={{ color: '#F1F5F9' }}>{value.title}</h3>
-                <p className="text-sm" style={{ color: '#94A3B8' }}>{value.desc}</p>
+              <div key={i} className="p-6 rounded-xl text-center bg-slate-800/50 border border-blue-900/30">
+                <value.icon className="w-10 h-10 mx-auto mb-4 text-blue-400" />
+                <h3 className="font-semibold mb-2 text-white">{value.title}</h3>
+                <p className="text-sm text-slate-400">{value.desc}</p>
               </div>
             ))}
           </div>
@@ -102,20 +109,20 @@ export default function AboutPage() {
 
         {/* 团队 */}
         <div className="text-center">
-          <h2 className="text-2xl font-bold mb-10" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>核心团队</h2>
+          <h2 className="text-2xl font-bold mb-10 text-white">核心团队</h2>
           <div className="grid md:grid-cols-3 gap-8 max-w-4xl mx-auto">
             {[
               { name: 'Alex Chen', role: '创始人 & CEO', bio: '前某头部交易所数据负责人，10年+加密行业经验' },
               { name: 'Sarah Liu', role: 'CTO', bio: 'AI/ML 专家，前大厂算法工程师，斯坦福 CS 硕士' },
               { name: 'Michael Wang', role: '产品负责人', bio: '资深产品设计师，连续创业者，专注金融科技产品' },
             ].map((member, i) => (
-              <div key={i} className="p-6 rounded-xl" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
-                <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold" style={{ backgroundColor: '#0F172A', color: '#F59E0B' }}>
+              <div key={i} className="p-6 rounded-xl bg-slate-800/50 border border-blue-900/30">
+                <div className="w-20 h-20 rounded-full mx-auto mb-4 flex items-center justify-center text-2xl font-bold bg-slate-900/50 text-blue-400">
                   {member.name.split(' ').map(n => n[0]).join('')}
                 </div>
-                <h3 className="font-semibold mb-1" style={{ color: '#F1F5F9' }}>{member.name}</h3>
-                <p className="text-sm mb-2" style={{ color: '#F59E0B' }}>{member.role}</p>
-                <p className="text-sm" style={{ color: '#64748B' }}>{member.bio}</p>
+                <h3 className="font-semibold mb-1 text-white">{member.name}</h3>
+                <p className="text-sm mb-2 text-blue-400">{member.role}</p>
+                <p className="text-sm text-slate-500">{member.bio}</p>
               </div>
             ))}
           </div>

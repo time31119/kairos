@@ -2,20 +2,49 @@
 
 import Link from 'next/link';
 import { Sparkles, TrendingUp, Brain, Radio, ArrowLeft, Zap, Shield, Users, LineChart, Eye, Target, Bell } from 'lucide-react';
-import { Navbar } from '@/components/Navbar';
 
 export default function ProductPage() {
   return (
-    <div className="min-h-screen" style={{ backgroundColor: '#0F172A' }}>
-      <Navbar />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
+      {/* 导航栏 */}
+      <nav className="border-b border-blue-900/30 bg-slate-950/80 backdrop-blur-sm sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex items-center space-x-4">
+              <Link href="/" className="text-2xl font-bold text-white">
+                <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                  Kairos
+                </span>
+              </Link>
+              <span className="text-xs text-blue-400/60 bg-blue-500/10 px-2 py-1 rounded">
+                Alpha Discovery
+              </span>
+            </div>
+            <div className="hidden md:flex items-center space-x-6">
+              <Link href="/trending" className="text-blue-300 hover:text-white transition">
+                Alpha热力榜
+              </Link>
+              <Link href="/product" className="text-blue-400 font-medium">
+                产品
+              </Link>
+              <Link href="/pricing" className="text-slate-400 hover:text-white transition">
+                定价
+              </Link>
+              <Link href="/resources" className="text-slate-400 hover:text-white transition">
+                资源
+              </Link>
+            </div>
+          </div>
+        </div>
+      </nav>
 
-      <div className="max-w-6xl mx-auto px-6 py-16">
-        <Link href="/" className="inline-flex items-center gap-2 mb-8 transition-colors hover:text-amber-400" style={{ color: '#64748B' }}>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+        <Link href="/" className="inline-flex items-center gap-2 mb-8 text-slate-400 hover:text-white transition">
           <ArrowLeft className="w-4 h-4" /> 返回首页
         </Link>
 
-        <h1 className="text-5xl font-bold mb-6" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>产品功能</h1>
-        <p className="text-xl max-w-3xl mb-8" style={{ color: '#94A3B8' }}>
+        <h1 className="text-5xl font-bold mb-6 text-white">产品功能</h1>
+        <p className="text-xl max-w-3xl mb-8 text-slate-400">
           Kairos 整合实时链上数据、社交媒体情绪、聪明钱动态等多维信息，通过 AI 算法生成评分与排序，帮助你在代币真正爆发前发现潜在热点，提前布局币安 Alpha。
         </p>
 
@@ -26,10 +55,10 @@ export default function ProductPage() {
             { icon: '💬', label: '社交情绪分析', desc: 'Twitter/Telegram 热度监测' },
             { icon: '💰', label: '聪明钱动态', desc: '顶级地址异动追踪' },
           ].map((item, i) => (
-            <div key={i} className="p-4 rounded-xl text-center" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
+            <div key={i} className="p-4 rounded-xl text-center bg-slate-800/50 border border-blue-900/30">
               <div className="text-2xl mb-2">{item.icon}</div>
-              <div className="font-semibold text-sm mb-1" style={{ color: '#F1F5F9' }}>{item.label}</div>
-              <div className="text-xs" style={{ color: '#64748B' }}>{item.desc}</div>
+              <div className="font-semibold text-sm mb-1 text-white">{item.label}</div>
+              <div className="text-xs text-slate-500">{item.desc}</div>
             </div>
           ))}
         </div>
@@ -43,16 +72,16 @@ export default function ProductPage() {
             { icon: Users, title: '聪明钱追踪', desc: '追踪顶级投资机构和聪明钱地址的持仓变化，第一时间捕捉机构建仓信号，提前发现 Alpha 机会。', features: ['机构持仓追踪', '大户异动监控', 'Alpha 资金监测'] },
             { icon: LineChart, title: '多维数据看板', desc: '实时价格、K 线、资金费率、合约持仓等多维度数据一屏掌握，辅助 Alpha 决策。', features: ['实时价格图表', '链上数据监控', '市场情绪指标'] },
           ].map((feature, i) => (
-            <div key={i} className="p-8 rounded-2xl transition-all duration-300 hover:scale-[1.02]" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6" style={{ backgroundColor: '#0F172A' }}>
-                <feature.icon className="w-7 h-7" style={{ color: '#F59E0B' }} />
+            <div key={i} className="p-8 rounded-2xl transition-all duration-300 hover:scale-[1.02] bg-slate-800/50 border border-blue-900/30">
+              <div className="w-14 h-14 rounded-2xl flex items-center justify-center mb-6 bg-slate-900/50">
+                <feature.icon className="w-7 h-7 text-blue-400" />
               </div>
-              <h3 className="text-xl font-semibold mb-3" style={{ color: '#F1F5F9' }}>{feature.title}</h3>
-              <p className="mb-4" style={{ color: '#94A3B8' }}>{feature.desc}</p>
-              <ul className="space-y-2 text-sm" style={{ color: '#64748B' }}>
+              <h3 className="text-xl font-semibold mb-3 text-white">{feature.title}</h3>
+              <p className="mb-4 text-slate-400">{feature.desc}</p>
+              <ul className="space-y-2 text-sm text-slate-400">
                 {feature.features.map((f, j) => (
                   <li key={j} className="flex items-center gap-2">
-                    <Zap className="w-4 h-4" style={{ color: '#F59E0B' }} /> {f}
+                    <Zap className="w-4 h-4 text-blue-400" /> {f}
                   </li>
                 ))}
               </ul>
@@ -62,7 +91,7 @@ export default function ProductPage() {
 
         {/* 附加功能 */}
         <div className="text-center">
-          <h2 className="text-3xl font-bold mb-8" style={{ fontFamily: 'Exo, sans-serif', color: '#F1F5F9' }}>更多功能</h2>
+          <h2 className="text-3xl font-bold mb-8 text-white">更多功能</h2>
           <div className="grid md:grid-cols-4 gap-6">
             {[
               { icon: Eye, title: '叙事追踪' },
@@ -70,9 +99,9 @@ export default function ProductPage() {
               { icon: Bell, title: '实时通知' },
               { icon: Sparkles, title: 'AI 助手' },
             ].map((item, i) => (
-              <div key={i} className="p-6 rounded-xl text-center transition-all hover:scale-105" style={{ backgroundColor: '#1E293B', border: '1px solid #334155' }}>
-                <item.icon className="w-8 h-8 mx-auto mb-3" style={{ color: '#F59E0B' }} />
-                <div className="font-medium" style={{ color: '#F1F5F9' }}>{item.title}</div>
+              <div key={i} className="p-6 rounded-xl text-center transition-all hover:scale-105 bg-slate-800/50 border border-blue-900/30">
+                <item.icon className="w-8 h-8 mx-auto mb-3 text-blue-400" />
+                <div className="font-medium text-white">{item.title}</div>
               </div>
             ))}
           </div>
