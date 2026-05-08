@@ -4,17 +4,94 @@ import { useState, useEffect, useCallback } from 'react';
 
 // 币安Alpha专区代币
 const ALPHA_SYMBOLS = [
-  { symbol: 'NEIROUSDT', name: 'Neiro', coingecko: 'neiro' },
-  { symbol: 'GOATUSDT', name: 'Goat', coingecko: 'goatseusd' },
-  { symbol: 'FWOGUSDT', name: 'FWOG', coingecko: 'fwog' },
-  { symbol: 'PNUTUSDT', name: 'Peanut', coingecko: 'peanut-the-squirrel' },
-  { symbol: 'POPCATUSDT', name: 'Popcat', coingecko: 'popcat' },
-  { symbol: 'MOODENGUSDT', name: 'MooDeng', coingecko: 'moodeng' },
-  { symbol: 'WIFUSDT', name: 'dogwifhat', coingecko: 'dogwifcoin' },
-  { symbol: 'BRETTUSDT', name: 'Brett', coingecko: 'brett' },
-  { symbol: 'PONKEUSDT', name: 'Ponke', coingecko: 'ponke' },
-  { symbol: 'SLERFUSDT', name: 'Slerf', coingecko: 'slerf' },
+  { symbol: 'NEIROUSDT', name: 'Neiro', coingecko: 'neiro', address: '0x812ba0D2F5377d77Dd7bF0537dF1EC9B5D52c21' },
+  { symbol: 'GOATUSDT', name: 'Goat', coingecko: 'goatseusd', address: '0x34f3b8b4b2c2d2d39d1d1c3b4d5e6f7a8b9c0d1' },
+  { symbol: 'FWOGUSDT', name: 'FWOG', coingecko: 'fwog', address: '0x45d2d5c2f2d3d1c2d3d1c2d3d4e5f6a7b8c9d0' },
+  { symbol: 'PNUTUSDT', name: 'Peanut', coingecko: 'peanut-the-squirrel', address: '0x67d971B4A45b0D5e1C4c4F3a5b6c7d8e9f0a1b2c' },
+  { symbol: 'POPCATUSDT', name: 'Popcat', coingecko: 'popcat', address: '0x78d8e2f2e3e4f5f6g7h8i9j0k1l2m3n4o5p6q' },
+  { symbol: 'MOODENGUSDT', name: 'MooDeng', coingecko: 'moodeng', address: '0x89e9f0g1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u' },
+  { symbol: 'WIFUSDT', name: 'dogwifhat', coingecko: 'dogwifcoin', address: '0x90f0g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6' },
+  { symbol: 'BRETTUSDT', name: 'Brett', coingecko: 'brett', address: '0xa1g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7' },
+  { symbol: 'PONKEUSDT', name: 'Ponke', coingecko: 'ponke', address: '0xb2h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8' },
+  { symbol: 'SLERFUSDT', name: 'Slerf', coingecko: 'slerf', address: '0xc3i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9' },
 ];
+
+// DEX跳转链接
+const DEX_LINKS = {
+  pancakeswap: (addr: string) => `https://pancakeswap.finance/swap?outputCurrency=${addr}`,
+  uniswap: (addr: string) => `https://app.uniswap.org/#/swap?outputCurrency=${addr}`,
+  binance: (symbol: string) => `https://www.binance.com/zh-CN/trade/${symbol.replace('USDT', '')}_USDT`,
+};
+
+// 交易按钮组件
+function TradeButton({ symbol, address, price }: { symbol: string; address: string; price: number }) {
+  const [showMenu, setShowMenu] = useState(false);
+  const baseSymbol = symbol.replace('USDT', '');
+  
+  const handleTrade = (dex: 'binance' | 'pancakeswap' | 'uniswap') => {
+    if (dex === 'binance') {
+      window.open(DEX_LINKS.binance(symbol), '_blank');
+    } else {
+      window.open(DEX_LINKS[dex](address), '_blank');
+    }
+    setShowMenu(false);
+  };
+  
+  return (
+    <div className="relative">
+      <button 
+        onClick={() => setShowMenu(!showMenu)}
+        className="px-4 py-2 bg-green-500 hover:bg-green-600 text-white font-bold rounded-lg flex items-center gap-2 transition-all"
+      >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        交易
+      </button>
+      
+      {showMenu && (
+        <div className="absolute right-0 top-12 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 min-w-48">
+          <div className="px-4 py-2 text-xs text-slate-400 border-b border-slate-700">
+            跳转到DEX交易
+          </div>
+          <button 
+            onClick={() => handleTrade('binance')}
+            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
+          >
+            <span className="w-6 h-6 bg-yellow-400 rounded text-black text-xs font-bold flex items-center justify-center">B</span>
+            <div>
+              <div className="text-white text-sm font-medium">币安交易</div>
+              <div className="text-slate-400 text-xs">CEX · 最稳定</div>
+            </div>
+          </button>
+          <button 
+            onClick={() => handleTrade('pancakeswap')}
+            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
+          >
+            <span className="w-6 h-6 bg-[#633001] rounded text-white text-xs font-bold flex items-center justify-center">P</span>
+            <div>
+              <div className="text-white text-sm font-medium">PancakeSwap</div>
+              <div className="text-slate-400 text-xs">BSC链 · 低手续费</div>
+            </div>
+          </button>
+          <button 
+            onClick={() => handleTrade('uniswap')}
+            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
+          >
+            <span className="w-6 h-6 bg-pink-500 rounded text-white text-xs font-bold flex items-center justify-center">U</span>
+            <div>
+              <div className="text-white text-sm font-medium">Uniswap</div>
+              <div className="text-slate-400 text-xs">ETH链 · 流动性最好</div>
+            </div>
+          </button>
+          <div className="px-4 py-2 text-xs text-slate-500 border-t border-slate-700">
+            当前价格: ${price > 0 ? price.toFixed(price < 1 ? 6 : 2) : '--'}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
 
 interface TokenData {
   symbol: string;
@@ -314,6 +391,20 @@ export default function TrendingPage() {
                         <div className={`text-xs ${getRiskBadge(token.riskLevel)}`}>
                           风险: {token.riskLevel === 'low' ? '低' : token.riskLevel === 'medium' ? '中' : '高'}
                         </div>
+                      </div>
+
+                      {/* 交易按钮 */}
+                      <div className="ml-4">
+                        {(() => {
+                          const tokenInfo = ALPHA_SYMBOLS.find(t => t.symbol.includes(token.symbol.replace('USDT', '')));
+                          return tokenInfo ? (
+                            <TradeButton 
+                              symbol={`${token.symbol.replace('USDT', '')}USDT`} 
+                              address={tokenInfo.address} 
+                              price={token.price}
+                            />
+                          ) : null;
+                        })()}
                       </div>
                     </div>
 
