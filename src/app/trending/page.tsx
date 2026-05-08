@@ -135,7 +135,7 @@ function getPlatforms(symbol: string, chain: string) {
 }
 
 export default function TrendingPage() {
-  const [tokens, setTokens] = useState<TokenData[]>([]);
+  const [tokens, setTokens] = useState<TokenData[]>(BACKUP_DATA);
   const [filter, setFilter] = useState<'all' | 'strong' | 'watch'>('all');
   const [lastUpdate, setLastUpdate] = useState('');
   const [loading, setLoading] = useState(true);
@@ -172,6 +172,10 @@ export default function TrendingPage() {
   }, []);
 
   useEffect(() => {
+    // 立即显示备用数据
+    setTokens(BACKUP_DATA);
+    setLastUpdate(new Date().toLocaleTimeString());
+    // 然后尝试获取实时数据
     fetchData();
     const interval = setInterval(fetchData, 30000); // 每30秒刷新
     return () => clearInterval(interval);
