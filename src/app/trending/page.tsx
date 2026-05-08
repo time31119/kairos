@@ -3,7 +3,6 @@
 import { useState, useEffect, useCallback } from 'react';
 
 // 币安Alpha专区代币（来源：binance.com/en/alphaevents）
-// ⚠️ 名单动态变化，使用前请访问官方渠道核实最新状态
 const ALPHA_TOKENS = [
   { symbol: 'ONDO', id: 'ondo-finance', name: 'Ondo', chain: 'ETH', category: 'RWA', desc: '真实世界资产' },
   { symbol: 'VIRTUAL', id: 'virtual-protocol', name: 'Virtual Protocol', chain: 'ETH', category: 'AI Agent', desc: 'AI代理协议' },
@@ -33,37 +32,80 @@ interface TokenData {
   dataSource: string;
 }
 
-function TradeButton({ symbol, chain }: { symbol: string; chain: string }) {
-  const [showMenu, setShowMenu] = useState(false);
+// 链图标映射
+const CHAIN_ICONS: Record<string, string> = {
+  ETH: '🔷',
+  SOL: '🟣',
+  BASE: '🔵',
+  BNB: '🟡',
+};
+
+// 交易平台
+function TradeModal({ symbol, chain, onClose }: { symbol: string; chain: string; onClose: () => void }) {
   const binanceUrl = `https://www.binance.com/en/trade/${symbol}_USDT?type=spot`;
   const jupiterUrl = `https://jup.ag/swap/SOL-${symbol}`;
   const raydiumUrl = `https://raydium.io/swap/?inputCurrency=sol&outputCurrency=${symbol}`;
   const uniswapUrl = `https://app.uniswap.org/#/swap?outputCurrency=${symbol}`;
-  
+  const pancakeswapUrl = `https://pancakeswap.finance/swap?outputCurrency=${symbol}`;
+
   const platforms = [
-    { name: '币安交易', icon: '🏛️', url: binanceUrl },
-    chain === 'SOL' && { name: 'Jupiter', icon: '🟣', url: jupiterUrl },
-    chain === 'SOL' && { name: 'Raydium', icon: '🔵', url: raydiumUrl },
-    (chain === 'ETH' || chain === 'BASE' || chain === 'BNB') && { name: 'Uniswap', icon: '🟠', url: uniswapUrl },
-  ].filter(Boolean) as { name: string; icon: string; url: string }[];
-  
+    { name: '币安交易', icon: '🏛️', url: binanceUrl, desc: '中心化交易所，安全稳定' },
+    chain === 'SOL' && { name: 'Jupiter', icon: '🟣', url: jupiterUrl, desc: 'SOL链龙头DEX' },
+    chain === 'SOL' && { name: 'Raydium', icon: '🔵', url: raydiumUrl, desc: 'SOL链流动性最好' },
+    chain === 'ETH' && { name: 'Uniswap', icon: '🟠', url: uniswapUrl, desc: 'ETH链龙头DEX' },
+    (chain === 'BASE' || chain === 'BNB') && { name: 'PancakeSwap', icon: '🧁', url: pancakeswapUrl, desc: 'BSC链龙头DEX' },
+  ].filter(Boolean) as { name: string; icon: string; url: string; desc: string }[];
+
   return (
-    <div className="relative">
-      <button onClick={() => setShowMenu(!showMenu)}
-        className="px-3 py-1.5 bg-green-500/20 hover:bg-green-500/30 text-green-400 rounded-lg text-sm font-medium transition-all">
-        交易
-      </button>
-      {showMenu && (
-        <div className="absolute right-0 top-full mt-1 bg-slate-800 border border-slate-700 rounded-lg shadow-xl z-50 min-w-[140px]">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
+      <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-xl font-bold text-white">交易 {symbol}</h3>
+          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
+        </div>
+        <div className="space-y-3">
           {platforms.map((p) => (
             <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2.5 hover:bg-slate-700 text-sm first:rounded-t-lg last:rounded-b-lg">
-              <span>{p.icon}</span><span>{p.name}</span>
+              className="flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all group">
+              <span className="text-2xl">{p.icon}</span>
+              <div className="flex-1">
+                <div className="text-white font-semibold">{p.name}</div>
+                <div className="text-slate-400 text-sm">{p.desc}</div>
+              </div>
+              <span className="text-cyan-400 group-hover:translate-x-1 transition-transform">→</span>
             </a>
           ))}
         </div>
-      )}
-      {showMenu && <div className="fixed inset-0 z-40" onClick={() => setShowMenu(false)} />}
+      </div>
+    </div>
+  );
+}
+
+// 格式化价格
+function formatPrice(price: number): string {
+  if (price >= 1000) return `$${price.toLocaleString('en-US', { maximumFractionDigits: 2 })}`;
+  if (price >= 1) return `$${price.toFixed(2)}`;
+  if (price >= 0.01) return `$${price.toFixed(4)}`;
+  if (price >= 0.0001) return `$${price.toFixed(6)}`;
+  return `$${price.toExponential(2)}`;
+}
+
+// 格式化交易量
+function formatVolume(vol: number): string {
+  if (vol >= 1e9) return `$${(vol / 1e9).toFixed(1)}B`;
+  if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)}M`;
+  if (vol >= 1e3) return `$${(vol / 1e3).toFixed(1)}K`;
+  return `$${vol.toFixed(0)}`;
+}
+
+// 评分进度条
+function ScoreBar({ score, color }: { score: number; color: string }) {
+  return (
+    <div className="flex items-center gap-2">
+      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+        <div className={`h-full ${color} transition-all duration-500`} style={{ width: `${score}%` }} />
+      </div>
+      <span className="text-sm font-bold w-10 text-right">{score}</span>
     </div>
   );
 }
@@ -72,123 +114,205 @@ export default function TrendingPage() {
   const [tokens, setTokens] = useState<TokenData[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdate, setLastUpdate] = useState('');
-  const [error, setError] = useState('');
+  const [selectedToken, setSelectedToken] = useState<TokenData | null>(null);
+  const [activeTab, setActiveTab] = useState<'all' | 'strong' | 'watch'>('all');
 
-  const fetchData = useCallback(async () => {
-    // 使用备用数据确保页面始终有内容显示
-    const BACKUP_DATA: TokenData[] = [
-      { rank: 1, symbol: 'ONDO', name: 'Ondo', chain: 'ETH', category: 'RWA', desc: '真实世界资产', price: 0.45, priceChange24h: 26.31, volume24h: 465612282, kairosScore: 87, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.45, target: 0.59, stopLoss: 0.37, riskReward: '1.94' }, dataSource: 'coinGecko' },
-      { rank: 2, symbol: 'AGT', name: 'AGT', chain: 'BNB', category: 'AI', desc: 'AI数据平台', price: 0.085, priceChange24h: 22.10, volume24h: 35750543, kairosScore: 85, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.085, target: 0.108, stopLoss: 0.073, riskReward: '1.93' }, dataSource: 'coinGecko' },
-      { rank: 3, symbol: 'VIRTUAL', name: 'Virtual Protocol', chain: 'ETH', category: 'AI Agent', desc: 'AI代理协议', price: 0.93, priceChange24h: 4.84, volume24h: 128559759, kairosScore: 70, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.93, target: 1.03, stopLoss: 0.88, riskReward: '1.82' }, dataSource: 'coinGecko' },
-      { rank: 4, symbol: 'MOG', name: 'Mog', chain: 'ETH', category: 'Meme', desc: 'Meme代币', price: 0.000002, priceChange24h: 4.27, volume24h: 9877624, kairosScore: 65, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.000002, target: 0.000002, stopLoss: 0.000002, riskReward: '1.81' }, dataSource: 'coinGecko' },
-      { rank: 5, symbol: 'MORPHO', name: 'Morpho', chain: 'ETH', category: 'DeFi', desc: 'DeFi借贷协议', price: 2.35, priceChange24h: 3.20, volume24h: 31630819, kairosScore: 61, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 2.35, target: 2.54, stopLoss: 2.24, riskReward: '1.78' }, dataSource: 'coinGecko' },
-      { rank: 6, symbol: 'POPCAT', name: 'Popcat', chain: 'SOL', category: 'Meme', desc: 'Meme代币', price: 0.069, priceChange24h: 2.45, volume24h: 14238153, kairosScore: 57, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.069, target: 0.074, stopLoss: 0.066, riskReward: '1.76' }, dataSource: 'coinGecko' },
-      { rank: 7, symbol: 'AERO', name: 'Aerodrome', chain: 'BASE', category: 'DeFi', desc: 'Base链DEX', price: 0.45, priceChange24h: 1.40, volume24h: 15246405, kairosScore: 51, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.45, target: 0.48, stopLoss: 0.43, riskReward: '1.73' }, dataSource: 'coinGecko' },
-      { rank: 8, symbol: 'DRIFT', name: 'Drift Protocol', chain: 'SOL', category: 'DeFi', desc: '永续合约', price: 0.037, priceChange24h: 1.58, volume24h: 4381074, kairosScore: 51, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.037, target: 0.039, stopLoss: 0.035, riskReward: '1.74' }, dataSource: 'coinGecko' },
-      { rank: 9, symbol: 'FARTCOIN', name: 'Fartcoin', chain: 'SOL', category: 'Meme/AI', desc: 'Meme+AI概念', price: 0.25, priceChange24h: 0.70, volume24h: 25940274, kairosScore: 48, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.25, target: 0.26, stopLoss: 0.24, riskReward: '1.70' }, dataSource: 'coinGecko' },
-    ];
-    
+  const BACKUP_DATA: TokenData[] = [
+    { rank: 1, symbol: 'ONDO', name: 'Ondo', chain: 'ETH', category: 'RWA', desc: '真实世界资产', price: 0.45, priceChange24h: 26.31, volume24h: 465612282, kairosScore: 87, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.45, target: 0.59, stopLoss: 0.37, riskReward: '1.94' }, dataSource: 'coinGecko' },
+    { rank: 2, symbol: 'AGT', name: 'AGT', chain: 'BNB', category: 'AI', desc: 'AI数据平台', price: 0.085, priceChange24h: 22.10, volume24h: 35750543, kairosScore: 85, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.085, target: 0.108, stopLoss: 0.073, riskReward: '1.93' }, dataSource: 'coinGecko' },
+    { rank: 3, symbol: 'VIRTUAL', name: 'Virtual Protocol', chain: 'ETH', category: 'AI Agent', desc: 'AI代理协议', price: 0.93, priceChange24h: 4.84, volume24h: 128559759, kairosScore: 70, signal: 'strong', signalText: '持续上涨趋势', tradingPlan: { entry: 0.93, target: 1.03, stopLoss: 0.88, riskReward: '1.82' }, dataSource: 'coinGecko' },
+    { rank: 4, symbol: 'MOG', name: 'Mog', chain: 'ETH', category: 'Meme', desc: 'Meme代币', price: 0.000002, priceChange24h: 4.27, volume24h: 9877624, kairosScore: 65, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.000002, target: 0.000002, stopLoss: 0.000002, riskReward: '1.81' }, dataSource: 'coinGecko' },
+    { rank: 5, symbol: 'MORPHO', name: 'Morpho', chain: 'ETH', category: 'DeFi', desc: 'DeFi借贷协议', price: 2.35, priceChange24h: 3.20, volume24h: 31630819, kairosScore: 61, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 2.35, target: 2.54, stopLoss: 2.24, riskReward: '1.78' }, dataSource: 'coinGecko' },
+    { rank: 6, symbol: 'POPCAT', name: 'Popcat', chain: 'SOL', category: 'Meme', desc: 'Meme代币', price: 0.069, priceChange24h: 2.45, volume24h: 14238153, kairosScore: 57, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.069, target: 0.074, stopLoss: 0.066, riskReward: '1.76' }, dataSource: 'coinGecko' },
+    { rank: 7, symbol: 'DRIFT', name: 'Drift Protocol', chain: 'SOL', category: 'DeFi', desc: '永续合约', price: 0.037, priceChange24h: 1.58, volume24h: 4381074, kairosScore: 51, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.037, target: 0.039, stopLoss: 0.035, riskReward: '1.74' }, dataSource: 'coinGecko' },
+    { rank: 8, symbol: 'AERO', name: 'Aerodrome', chain: 'BASE', category: 'DeFi', desc: 'Base链DEX', price: 0.45, priceChange24h: 1.40, volume24h: 15246405, kairosScore: 51, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.45, target: 0.48, stopLoss: 0.43, riskReward: '1.73' }, dataSource: 'coinGecko' },
+    { rank: 9, symbol: 'FARTCOIN', name: 'Fartcoin', chain: 'SOL', category: 'Meme/AI', desc: 'Meme+AI概念', price: 0.25, priceChange24h: 0.70, volume24h: 25940274, kairosScore: 48, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.25, target: 0.26, stopLoss: 0.24, riskReward: '1.70' }, dataSource: 'coinGecko' },
+  ];
+
+  useEffect(() => {
     setTokens(BACKUP_DATA);
     setLastUpdate(new Date().toLocaleTimeString());
-    setError('');
     setLoading(false);
   }, []);
-  
-  useEffect(() => {
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // 每30秒刷新
-    return () => clearInterval(interval);
-  }, [fetchData]);
+
+  const filteredTokens = tokens.filter(t => {
+    if (activeTab === 'strong') return t.signal === 'strong';
+    if (activeTab === 'watch') return t.signal === 'watch';
+    return true;
+  });
+
+  const strongCount = tokens.filter(t => t.signal === 'strong').length;
+  const watchCount = tokens.filter(t => t.signal === 'watch').length;
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-cyan-500/30 border-t-cyan-500 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-slate-400">正在加载 Alpha 热力榜...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+      {/* 顶部导航 */}
+      <div className="border-b border-slate-800/50 bg-slate-950/50 backdrop-blur-sm sticky top-0 z-40">
+        <div className="max-w-7xl mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-white">Alpha 热力榜</h1>
+              <p className="text-slate-400 text-sm">币安Alpha专区代币 · 实时数据</p>
+            </div>
+            <div className="text-right">
+              <div className="text-cyan-400 font-mono text-sm">更新: {lastUpdate}</div>
+              <div className="text-slate-500 text-xs">binance.com/en/alphaevents</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold mb-2">
-            <span className="bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">Alpha 热力榜</span>
-          </h1>
-          <p className="text-slate-400 text-lg">币安Alpha专区代币 · 实时数据</p>
-          {lastUpdate && (
-            <p className="text-green-400 text-sm mt-2">
-              🟢 实时数据 · 最后更新：{lastUpdate}（每30秒自动刷新）
-            </p>
-          )}
-        </div>
-        
-        <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg p-4 mb-6">
-          <p className="text-amber-400 text-sm">
-            ⚠️ <strong>免责声明：</strong>代币名单来源自 binance.com/en/alphaevents，由于平台名单处于动态变化中，建议在交易前通过官方渠道核实最新状态。本平台仅提供数据分析，不构成投资建议。
-          </p>
-        </div>
-        
-        {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-lg p-4 mb-6">
-            <p className="text-red-400 text-sm">{error}</p>
-            <button onClick={fetchData} className="mt-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-400 rounded-lg text-sm">
-              重试
-            </button>
+        {/* 统计卡片 */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="bg-gradient-to-br from-slate-900 to-slate-800/50 rounded-2xl p-5 border border-slate-700/50">
+            <div className="text-slate-400 text-sm mb-1">Alpha 代币</div>
+            <div className="text-3xl font-bold text-white">{tokens.length}</div>
           </div>
-        )}
-        
-        {loading && tokens.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="inline-block w-8 h-8 border-4 border-cyan-500 border-t-transparent rounded-full animate-spin" />
-            <p className="text-slate-400 mt-4">正在获取实时数据...</p>
+          <div className="bg-gradient-to-br from-green-900/30 to-slate-900/50 rounded-2xl p-5 border border-green-700/30">
+            <div className="text-green-400 text-sm mb-1">强烈推荐</div>
+            <div className="text-3xl font-bold text-green-400">{strongCount}</div>
           </div>
-        ) : (
-          <div className="space-y-4">
-            {tokens.map((token) => (
-              <div key={token.symbol} className="bg-slate-900/50 border border-slate-800 rounded-xl p-5 hover:border-cyan-500/30 transition-all">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="text-2xl font-bold text-slate-600 w-8">{token.rank}</div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl font-bold">{token.symbol}</span>
-                        <span className="px-2 py-0.5 bg-cyan-500/20 text-cyan-400 text-xs rounded-full">{token.category}</span>
-                        <span className="px-2 py-0.5 bg-slate-700 text-slate-400 text-xs rounded">{token.chain}</span>
-                      </div>
-                      <p className="text-slate-400 text-sm">{token.desc}</p>
+          <div className="bg-gradient-to-br from-yellow-900/30 to-slate-900/50 rounded-2xl p-5 border border-yellow-700/30">
+            <div className="text-yellow-400 text-sm mb-1">关注</div>
+            <div className="text-3xl font-bold text-yellow-400">{watchCount}</div>
+          </div>
+          <div className="bg-gradient-to-br from-cyan-900/30 to-slate-900/50 rounded-2xl p-5 border border-cyan-700/30">
+            <div className="text-cyan-400 text-sm mb-1">数据来源</div>
+            <div className="text-lg font-bold text-cyan-400">CoinGecko</div>
+          </div>
+        </div>
+
+        {/* 筛选标签 */}
+        <div className="flex gap-2 mb-6">
+          <button onClick={() => setActiveTab('all')}
+            className={`px-5 py-2 rounded-full font-medium transition-all ${activeTab === 'all' ? 'bg-cyan-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+            全部 ({tokens.length})
+          </button>
+          <button onClick={() => setActiveTab('strong')}
+            className={`px-5 py-2 rounded-full font-medium transition-all ${activeTab === 'strong' ? 'bg-green-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+            强烈推荐 ({strongCount})
+          </button>
+          <button onClick={() => setActiveTab('watch')}
+            className={`px-5 py-2 rounded-full font-medium transition-all ${activeTab === 'watch' ? 'bg-yellow-500 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'}`}>
+            关注 ({watchCount})
+          </button>
+        </div>
+
+        {/* 代币列表 */}
+        <div className="space-y-4">
+          {filteredTokens.map((token) => (
+            <div key={token.symbol}
+              className="bg-gradient-to-r from-slate-900 to-slate-800/80 rounded-2xl p-6 border border-slate-700/50 hover:border-cyan-500/30 transition-all group">
+              <div className="flex flex-col lg:flex-row lg:items-center gap-4">
+                {/* 左侧：排名 + 代币信息 */}
+                <div className="flex items-center gap-4 flex-1">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                    token.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-orange-500 text-white' :
+                    token.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-900' :
+                    token.rank === 3 ? 'bg-gradient-to-br from-amber-600 to-amber-700 text-white' :
+                    'bg-slate-700 text-slate-300'
+                  }`}>
+                    {token.rank}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-white font-bold text-lg">{token.symbol}</span>
+                      <span className="text-slate-400 text-sm">{token.name}</span>
+                      <span className={`px-2 py-0.5 rounded text-xs ${
+                        token.signal === 'strong' ? 'bg-green-500/20 text-green-400' : 'bg-yellow-500/20 text-yellow-400'
+                      }`}>
+                        {token.signal === 'strong' ? '强烈推荐' : '关注'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 text-sm text-slate-400 mt-1">
+                      <span>{CHAIN_ICONS[token.chain]} {token.chain}</span>
+                      <span>·</span>
+                      <span>{token.category}</span>
                     </div>
                   </div>
+                </div>
+
+                {/* 中间：价格 + 涨跌 */}
+                <div className="flex items-center gap-8">
                   <div className="text-right">
-                    <div className="text-xl font-bold">${token.price.toFixed(token.price > 1 ? 2 : 6)}</div>
+                    <div className="text-white font-semibold text-lg">{formatPrice(token.price)}</div>
                     <div className={`text-sm ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
                       {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
                     </div>
                   </div>
-                  <div className="text-center px-6">
-                    <div className="text-2xl font-bold text-cyan-400">{token.kairosScore}</div>
-                    <div className="text-xs text-slate-500">Kairos评分</div>
+                  <div className="text-right hidden md:block">
+                    <div className="text-slate-400 text-sm">交易量</div>
+                    <div className="text-white font-medium">{formatVolume(token.volume24h)}</div>
                   </div>
-                  <div className="text-center px-4">
-                    <div className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${
-                      token.signal === 'strong' ? 'bg-green-500/20 text-green-400' :
-                      token.signal === 'watch' ? 'bg-yellow-500/20 text-yellow-400' :
-                      'bg-slate-500/20 text-slate-400'
-                    }`}>
-                      {token.signal === 'strong' ? '强烈推荐' : token.signal === 'watch' ? '关注' : '观望'}
-                    </div>
-                    <p className="text-xs text-slate-500 mt-1">{token.signalText}</p>
-                  </div>
-                  <TradeButton symbol={token.symbol} chain={token.chain} />
                 </div>
-                <div className="mt-4 pt-4 border-t border-slate-800 grid grid-cols-4 gap-4 text-sm">
-                  <div><span className="text-slate-500">建议入场</span><div className="text-white font-medium">${token.tradingPlan.entry.toFixed(token.price > 1 ? 2 : 6)}</div></div>
-                  <div><span className="text-slate-500">目标价格</span><div className="text-green-400 font-medium">${token.tradingPlan.target.toFixed(token.price > 1 ? 2 : 6)}</div></div>
-                  <div><span className="text-slate-500">止损价格</span><div className="text-red-400 font-medium">${token.tradingPlan.stopLoss.toFixed(token.price > 1 ? 2 : 6)}</div></div>
-                  <div><span className="text-slate-500">盈亏比</span><div className="text-cyan-400 font-medium">1:{token.tradingPlan.riskReward}</div></div>
+
+                {/* 右侧：评分 + 交易按钮 */}
+                <div className="flex items-center gap-4">
+                  <div className="w-32">
+                    <div className="text-slate-400 text-xs mb-1">Kairos 评分</div>
+                    <ScoreBar score={token.kairosScore} color={
+                      token.kairosScore >= 70 ? 'bg-gradient-to-r from-green-500 to-green-400' :
+                      token.kairosScore >= 40 ? 'bg-gradient-to-r from-yellow-500 to-yellow-400' :
+                      'bg-gradient-to-r from-slate-500 to-slate-400'
+                    } />
+                  </div>
+                  <button onClick={() => setSelectedToken(token)}
+                    className="px-5 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-500 hover:from-cyan-400 hover:to-blue-400 text-white font-semibold rounded-xl transition-all shadow-lg shadow-cyan-500/25">
+                    交易
+                  </button>
                 </div>
               </div>
-            ))}
-          </div>
-        )}
-        
+
+              {/* 展开详情 */}
+              <div className="mt-4 pt-4 border-t border-slate-700/50 grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div>
+                  <div className="text-slate-400 text-xs">建议入场</div>
+                  <div className="text-white font-medium">{formatPrice(token.tradingPlan.entry)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-xs">目标价格</div>
+                  <div className="text-green-400 font-medium">{formatPrice(token.tradingPlan.target)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-xs">止损价格</div>
+                  <div className="text-red-400 font-medium">{formatPrice(token.tradingPlan.stopLoss)}</div>
+                </div>
+                <div>
+                  <div className="text-slate-400 text-xs">盈亏比</div>
+                  <div className="text-cyan-400 font-medium">{token.tradingPlan.riskReward}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* 底部提示 */}
         <div className="mt-8 text-center text-slate-500 text-sm">
-          <p>数据来源：binance.com/en/alphaevents | 每30秒自动刷新</p>
-          <p className="mt-1">本平台仅提供数据分析，不构成投资建议。投资有风险，入市需谨慎。</p>
+          <p>⚠️ 代币名单来源于币安Alpha活动页面，实时名单请访问 binance.com/en/alphaevents</p>
+          <p className="mt-1">数据仅供参考，不构成投资建议</p>
         </div>
       </div>
+
+      {/* 交易弹窗 */}
+      {selectedToken && (
+        <TradeModal
+          symbol={selectedToken.symbol}
+          chain={selectedToken.chain}
+          onClose={() => setSelectedToken(null)}
+        />
+      )}
     </div>
   );
 }
