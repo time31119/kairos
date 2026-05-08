@@ -41,24 +41,26 @@ export function Navbar() {
         </Link>
 
         <div className="flex items-center gap-8">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className="text-sm font-medium transition-colors"
-              style={{
-                color: pathname === link.href ? "#3B82F6" : "#94A3B8",
-              }}
-              {...(link.highlight && {
-                style: {
-                  color: pathname === link.href ? "#60A5FA" : "#38BDF8",
-                  textShadow: "0 0 20px rgba(56, 189, 248, 0.3)",
-                }
-              })}
-            >
-              {link.label}
-            </Link>
-          ))}
+          {navLinks.map((link) => {
+            const isActive = pathname === link.href;
+            return (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="text-sm font-medium transition-colors"
+                style={{
+                  color: link.highlight 
+                    ? (isActive ? "#60A5FA" : "#38BDF8")
+                    : (isActive ? "#3B82F6" : "#94A3B8"),
+                  textShadow: link.highlight 
+                    ? "0 0 20px rgba(56, 189, 248, 0.3)"
+                    : undefined,
+                }}
+              >
+                {link.label}
+              </Link>
+            );
+          })}
           <AuthButton />
         </div>
       </div>
