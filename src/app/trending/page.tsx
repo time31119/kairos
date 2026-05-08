@@ -1,21 +1,7 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 
-// 币安Alpha专区代币
-const ALPHA_TOKENS = [
-  { symbol: 'ONDO', name: 'Ondo', chain: 'ETH', id: 'ondo-finance', category: 'RWA', desc: '真实世界资产' },
-  { symbol: 'VIRTUAL', name: 'Virtual Protocol', chain: 'ETH', id: 'virtual-protocol', category: 'AI Agent', desc: 'AI代理协议' },
-  { symbol: 'AERO', name: 'Aerodrome', chain: 'BASE', id: 'aerodrome-finance', category: 'DeFi', desc: 'Base链DEX' },
-  { symbol: 'FARTCOIN', name: 'Fartcoin', chain: 'SOL', id: 'fartcoin', category: 'Meme/AI', desc: 'Meme+AI概念' },
-  { symbol: 'MORPHO', name: 'Morpho', chain: 'ETH', id: 'morpho-protocol', category: 'DeFi', desc: 'DeFi借贷协议' },
-  { symbol: 'DRIFT', name: 'Drift Protocol', chain: 'SOL', id: 'drift-protocol', category: 'DeFi', desc: '永续合约' },
-  { symbol: 'POPCAT', name: 'Popcat', chain: 'SOL', id: 'popcat', category: 'Meme', desc: 'Meme代币' },
-  { symbol: 'MOG', name: 'Mog', chain: 'ETH', id: 'mog-coin', category: 'Meme', desc: 'Meme代币' },
-  { symbol: 'AGT', name: 'AGT', chain: 'BNB', id: 'agt-coin', category: 'AI', desc: 'AI数据平台' },
-];
-
-// 代币数据
 interface TokenData {
   rank: number;
   symbol: string;
@@ -29,51 +15,22 @@ interface TokenData {
   kairosScore: number;
   signal: 'strong' | 'watch' | 'wait';
   signalText: string;
-  tradingPlan: { entry: number; target: number; stopLoss: number; riskReward: string };
+  tradingPlan: {
+    entry: number;
+    target: number;
+    stopLoss: number;
+    riskReward: string;
+  };
   dataSource: string;
 }
 
-// 链图标
-const CHAIN_ICONS: Record<string, string> = {
-  ETH: '🔷',
-  SOL: '🟣',
-  BASE: '🔵',
-  BNB: '🟡',
-};
-
-// 格式化价格
-function formatPrice(price: number): string {
-  if (price >= 1000) return `$${price.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-  if (price >= 1) return `$${price.toFixed(2)}`;
-  if (price >= 0.01) return `$${price.toFixed(4)}`;
-  if (price >= 0.0001) return `$${price.toFixed(6)}`;
-  return `$${price.toExponential(2)}`;
+interface Platform {
+  name: string;
+  exchange: string;
 }
 
-// 格式化交易量
-function formatVolume(vol: number): string {
-  if (vol >= 1e9) return `$${(vol / 1e9).toFixed(1)}B`;
-  if (vol >= 1e6) return `$${(vol / 1e6).toFixed(1)}M`;
-  if (vol >= 1e3) return `$${(vol / 1e3).toFixed(1)}K`;
-  return `$${vol.toFixed(0)}`;
-}
-
-// 格式化涨跌
-function formatChange(change: number): string {
-  return `${change >= 0 ? '+' : ''}${change.toFixed(2)}%`;
-}
-
-// 交易链接
-function getTradeUrl(symbol: string, exchange: string): string {
-  const urls: Record<string, string> = {
-    binance: `https://www.binance.com/en/trade/${symbol}_USDT?type=spot`,
-    jupiter: `https://jup.ag/swap/SOL-${symbol}`,
-    raydium: `https://raydium.io/swap/?inputCurrency=sol&outputCurrency=${symbol}`,
-    uniswap: `https://app.uniswap.org/#/swap?outputCurrency=${symbol}`,
-    pancakeswap: `https://pancakeswap.finance/swap?outputCurrency=${symbol}`,
-  };
-  return urls[exchange] || urls.binance;
-}
+// 币安上市代币白名单
+const BINANCE_LISTED = ['ONDO', 'VIRTUAL', 'AERO', 'DRIFT', 'POPCAT', 'MORPHO', 'FARTCOIN', 'MOG', 'AGT'];
 
 // 备用数据
 const BACKUP_DATA: TokenData[] = [
@@ -88,253 +45,282 @@ const BACKUP_DATA: TokenData[] = [
   { rank: 9, symbol: 'FARTCOIN', name: 'Fartcoin', chain: 'SOL', category: 'Meme/AI', desc: 'Meme+AI概念', price: 0.25, priceChange24h: 0.70, volume24h: 25940274, kairosScore: 48, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.25, target: 0.26, stopLoss: 0.24, riskReward: '1.70' }, dataSource: 'coinGecko' },
 ];
 
-// 确认在币安上市的代币
-const BINANCE_LISTED = ['ONDO', 'VIRTUAL', 'AERO', 'DRIFT', 'POPCAT', 'MORPHO'];
-
-// 获取交易平台
-function getPlatforms(symbol: string, chain: string) {
-  const listedOnBinance = BINANCE_LISTED.includes(symbol);
+function getTradePlatforms(symbol: string, chain: string): Platform[] {
+  const platforms: Platform[] = [];
+  
+  if (BINANCE_LISTED.includes(symbol)) {
+    platforms.push({ name: '币安交易', exchange: 'binance' });
+  }
   
   if (chain === 'SOL') {
-    return listedOnBinance
-      ? [
-          { name: '币安', exchange: 'binance' },
-          { name: 'Jupiter', exchange: 'jupiter' },
-          { name: 'Raydium', exchange: 'raydium' },
-        ]
-      : [
-          { name: 'Jupiter', exchange: 'jupiter' },
-          { name: 'Raydium', exchange: 'raydium' },
-        ];
+    platforms.push({ name: 'Jupiter', exchange: 'jupiter' });
+    platforms.push({ name: 'Raydium', exchange: 'raydium' });
+  } else if (chain === 'ETH' || chain === 'BASE') {
+    platforms.push({ name: 'Uniswap', exchange: 'uniswap' });
+  } else if (chain === 'BNB') {
+    platforms.push({ name: 'PancakeSwap', exchange: 'pancakeswap' });
   }
   
-  if (chain === 'ETH') {
-    return listedOnBinance
-      ? [
-          { name: '币安', exchange: 'binance' },
-          { name: 'Uniswap', exchange: 'uniswap' },
-        ]
-      : [
-          { name: 'Uniswap', exchange: 'uniswap' },
-        ];
+  return platforms;
+}
+
+function getTradeUrl(symbol: string, exchange: string): string {
+  const urls: Record<string, Record<string, string>> = {
+    binance: {
+      ONDO: 'https://www.binance.com/en/trade/ONDO_USDT',
+      VIRTUAL: 'https://www.binance.com/en/trade/VIRTUAL_USDT',
+      AERO: 'https://www.binance.com/en/trade/AERO_USDT',
+      DRIFT: 'https://www.binance.com/en/trade/DRIFT_USDT',
+      POPCAT: 'https://www.binance.com/en/trade/POPCAT_USDT',
+      MORPHO: 'https://www.binance.com/en/trade/MORPHO_USDT',
+      FARTCOIN: 'https://www.binance.com/en/trade/FARTCOIN_USDT',
+      MOG: 'https://www.binance.com/en/trade/MOG_USDT',
+      AGT: 'https://www.binance.com/en/trade/AGT_USDT',
+    },
+    jupiter: { default: 'https://jup.ag/swap/SOL' },
+    raydium: { default: 'https://raydium.io/swap/' },
+    uniswap: { default: 'https://app.uniswap.org/#/swap' },
+    pancakeswap: { default: 'https://pancakeswap.finance/swap' },
+  };
+  
+  if (exchange === 'binance') {
+    return urls.binance[symbol] || `https://www.binance.com/en/trade/${symbol}_USDT`;
   }
   
-  if (chain === 'BASE') {
-    return listedOnBinance
-      ? [
-          { name: '币安', exchange: 'binance' },
-          { name: 'Uniswap', exchange: 'uniswap' },
-        ]
-      : [
-          { name: 'Uniswap', exchange: 'uniswap' },
-          { name: 'PancakeSwap', exchange: 'pancakeswap' },
-        ];
-  }
-  
-  return [{ name: 'Uniswap', exchange: 'uniswap' }];
+  return urls[exchange]?.default || 'https://www.binance.com';
+}
+
+function formatPrice(price: number): string {
+  if (price >= 1) return '$' + price.toFixed(2);
+  if (price >= 0.01) return '$' + price.toFixed(4);
+  if (price >= 0.0001) return '$' + price.toFixed(6);
+  return '$' + price.toFixed(8);
+}
+
+function formatVolume(volume: number): string {
+  if (volume >= 1e9) return '$' + (volume / 1e9).toFixed(1) + 'B';
+  if (volume >= 1e6) return '$' + (volume / 1e6).toFixed(1) + 'M';
+  if (volume >= 1e3) return '$' + (volume / 1e3).toFixed(1) + 'K';
+  return '$' + volume.toFixed(0);
 }
 
 export default function TrendingPage() {
   const [tokens, setTokens] = useState<TokenData[]>(BACKUP_DATA);
   const [filter, setFilter] = useState<'all' | 'strong' | 'watch'>('all');
-  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
-
-  // 获取数据
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      // 调用服务端API获取实时数据
-      const response = await fetch('/api/alpha-ranking?ts=' + Date.now());
-      const result = await response.json();
-      
-      if (result.success && result.opportunities) {
-        setTokens(result.opportunities);
-        setLastUpdate(new Date(result.updatedAt).toLocaleTimeString());
-      } else {
-        // API失败，使用备用数据
-        const data = [...BACKUP_DATA];
-        data.sort((a, b) => b.kairosScore - a.kairosScore);
-        data.forEach((t, i) => t.rank = i + 1);
-        setTokens(data);
-        if (typeof window !== "undefined") { setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"})); }
-      }
-    } catch (e) {
-      // 失败使用备用
-      const data = [...BACKUP_DATA];
-      data.sort((a, b) => b.kairosScore - a.kairosScore);
-      data.forEach((t, i) => t.rank = i + 1);
-      setTokens(data);
-      setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"}));
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+  const [lastUpdate, setLastUpdate] = useState('--:--:--');
 
   useEffect(() => {
-    // 立即显示备用数据
-    setTokens(BACKUP_DATA);
-    setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"}));
-    // 然后尝试获取实时数据
-    fetchData();
-    const interval = setInterval(fetchData, 30000); // 每30秒刷新
+    const updateData = async () => {
+      try {
+        const response = await fetch('/api/alpha-ranking?ts=' + Date.now());
+        const result = await response.json();
+        
+        if (result.success && result.opportunities && result.opportunities.length > 0) {
+          setTokens(result.opportunities);
+        }
+        setLastUpdate(new Date().toLocaleTimeString());
+      } catch (e) {
+        setLastUpdate(new Date().toLocaleTimeString());
+      }
+    };
+    
+    updateData();
+    const interval = setInterval(updateData, 30000);
     return () => clearInterval(interval);
-  }, [fetchData]);
+  }, []);
 
-  // 筛选
   const filteredTokens = tokens.filter(t => {
     if (filter === 'strong') return t.signal === 'strong';
     if (filter === 'watch') return t.signal === 'watch';
     return true;
   });
 
+  const strongCount = tokens.filter(t => t.signal === 'strong').length;
+  const watchCount = tokens.filter(t => t.signal === 'watch').length;
 
   return (
-    <div className="min-h-screen bg-slate-950">
-      {/* 顶部 */}
-      <div className="sticky top-0 bg-slate-950/95 backdrop-blur-sm border-b border-slate-800 z-10">
-        <div className="max-w-4xl mx-auto px-4 py-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950">
+      {/* Header */}
+      <div className="sticky top-0 z-10 bg-slate-950/80 backdrop-blur-md border-b border-slate-800">
+        <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white">Alpha热力榜</h1>
-              <p className="text-sm text-slate-400">币安Alpha专区代币 · 实时数据</p>
+              <h1 className="text-2xl font-bold text-white">Alpha热力榜</h1>
+              <p className="text-slate-400 text-sm mt-1">
+                币安Alpha专区代币 · 实时数据 · 更新: {lastUpdate}
+              </p>
             </div>
             <div className="text-right">
-              <div className="text-xs text-slate-500">更新时间</div>
-              <div className="text-sm text-cyan-400">{lastUpdate}</div>
+              <p className="text-cyan-400 text-sm">数据来源：binance.com/en/alphaevents</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-4xl mx-auto px-4 py-6">
-        {/* 统计 */}
-        <div className="grid grid-cols-4 gap-3 mb-6">
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800">
-            <div className="text-2xl font-bold text-white">{tokens.length}</div>
-            <div className="text-xs text-slate-400">Alpha代币</div>
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
+        {/* Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+            <p className="text-slate-400 text-sm">Alpha 代币</p>
+            <p className="text-3xl font-bold text-white mt-1">{tokens.length}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-green-800">
-            <div className="text-2xl font-bold text-green-400">{tokens.filter(t => t.signal === 'strong').length}</div>
-            <div className="text-xs text-slate-400">强烈推荐</div>
+          <div className="bg-green-900/20 border border-green-800 rounded-xl p-4">
+            <p className="text-green-400 text-sm">强烈推荐</p>
+            <p className="text-3xl font-bold text-green-400 mt-1">{strongCount}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800">
-            <div className="text-2xl font-bold text-yellow-400">{tokens.filter(t => t.signal === 'watch').length}</div>
-            <div className="text-xs text-slate-400">关注</div>
+          <div className="bg-yellow-900/20 border border-yellow-800 rounded-xl p-4">
+            <p className="text-yellow-400 text-sm">关注</p>
+            <p className="text-3xl font-bold text-yellow-400 mt-1">{watchCount}</p>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 text-center border border-slate-800">
-            <div className="text-sm font-bold text-cyan-400">CoinGecko</div>
-            <div className="text-xs text-slate-400">数据来源</div>
+          <div className="bg-slate-900/50 border border-slate-800 rounded-xl p-4">
+            <p className="text-slate-400 text-sm">数据来源</p>
+            <p className="text-cyan-400 text-lg font-semibold mt-1">CoinGecko</p>
           </div>
         </div>
 
-        {/* 筛选 */}
-        <div className="flex gap-2 mb-6">
-          {(['all', 'strong', 'watch'] as const).map(f => (
-            <button key={f} onClick={() => setFilter(f)}
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-colors ${
-                filter === f ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
-              }`}>
-              {f === 'all' ? '全部' : f === 'strong' ? '强烈推荐' : '关注'}
-            </button>
-          ))}
+        {/* Filters */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => setFilter('all')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              filter === 'all' ? 'bg-cyan-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            全部
+          </button>
+          <button
+            onClick={() => setFilter('strong')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              filter === 'strong' ? 'bg-green-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            强烈推荐
+          </button>
+          <button
+            onClick={() => setFilter('watch')}
+            className={`px-4 py-2 rounded-lg transition-colors ${
+              filter === 'watch' ? 'bg-yellow-600 text-white' : 'bg-slate-800 text-slate-400 hover:bg-slate-700'
+            }`}
+          >
+            关注
+          </button>
         </div>
 
-        {/* 代币列表 */}
-        <div className="space-y-3">
-          {filteredTokens.map(token => {
-            const isPositive = token.priceChange24h >= 0;
-            const signalColor = token.signal === 'strong' ? 'text-green-400' : 'text-yellow-400';
-            const signalBg = token.signal === 'strong' ? 'bg-green-500/20 border-green-500/50' : 'bg-yellow-500/20 border-yellow-500/50';
+        {/* Token Cards */}
+        <div className="space-y-4">
+          {filteredTokens.map((token) => {
+            const platforms = getTradePlatforms(token.symbol, token.chain);
             
             return (
-              <div key={token.symbol} className="bg-slate-900 rounded-xl border border-slate-800 overflow-hidden">
-                {/* 主信息 */}
-                <div className="p-4">
-                  <div className="flex items-center gap-3 mb-3">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-sm ${
-                      token.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                      token.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
-                      token.rank === 3 ? 'bg-orange-600/20 text-orange-400' :
-                      'bg-slate-700 text-slate-400'
+              <div
+                key={token.symbol}
+                className="bg-slate-900/80 border border-slate-800 rounded-2xl overflow-hidden hover:border-cyan-500/50 transition-colors"
+              >
+                {/* Header */}
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold text-lg ${
+                      token.rank === 1 ? 'bg-gradient-to-br from-yellow-400 to-amber-600 text-white' :
+                      token.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-white' :
+                      token.rank === 3 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' :
+                      'bg-slate-800 text-slate-300'
                     }`}>
-                      {token.rank}
+                      {token.rank <= 3 ? ['🥇', '🥈', '🥉'][token.rank - 1] : token.rank}
                     </div>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-bold text-white">{token.symbol}</span>
-                        <span className="text-slate-500 text-sm">{token.name}</span>
-                        <span className="text-slate-600">·</span>
-                        <span className="text-slate-500 text-sm">{CHAIN_ICONS[token.chain]} {token.chain}</span>
-                        <span className="text-slate-600">·</span>
-                        <span className="text-slate-500 text-sm">{token.category}</span>
-                      </div>
-                    </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${signalBg} ${signalColor}`}>
-                      {token.signal === 'strong' ? '强烈推荐' : '关注'}
+                    <div>
+                      <h3 className="text-white font-bold text-lg">{token.symbol}</h3>
+                      <p className="text-slate-400 text-sm">{token.name} · {token.chain} · {token.category}</p>
                     </div>
                   </div>
+                  <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    token.signal === 'strong' ? 'bg-green-500/20 text-green-400' :
+                    token.signal === 'watch' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-slate-500/20 text-slate-400'
+                  }`}>
+                    {token.signal === 'strong' ? '🟢 强烈推荐' :
+                     token.signal === 'watch' ? '🟡 关注' : '⚪ 观望'}
+                  </div>
+                </div>
 
-                  <div className="grid grid-cols-4 gap-4">
-                    <div>
-                      <div className="text-slate-500 text-xs mb-1">价格</div>
-                      <div className="text-white font-semibold">{formatPrice(token.price)}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500 text-xs mb-1">24h涨跌</div>
-                      <div className={`font-semibold ${isPositive ? 'text-green-400' : 'text-red-400'}`}>
-                        {formatChange(token.priceChange24h)}
+                {/* Stats */}
+                <div className="px-4 pb-4 grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-slate-400 text-xs">价格</p>
+                    <p className="text-white font-semibold">{formatPrice(token.price)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs">24h涨跌</p>
+                    <p className={`font-semibold ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                      {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs">交易量</p>
+                    <p className="text-white font-semibold">{formatVolume(token.volume24h)}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-400 text-xs">Kairos评分</p>
+                    <div className="flex items-center gap-2">
+                      <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            token.kairosScore >= 70 ? 'bg-green-500' :
+                            token.kairosScore >= 40 ? 'bg-yellow-500' : 'bg-slate-500'
+                          }`}
+                          style={{ width: `${token.kairosScore}%` }}
+                        />
                       </div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500 text-xs mb-1">交易量</div>
-                      <div className="text-white font-semibold text-sm">{formatVolume(token.volume24h)}</div>
-                    </div>
-                    <div>
-                      <div className="text-slate-500 text-xs mb-1">Kairos评分</div>
-                      <div className="flex items-center gap-2">
-                        <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                          <div className="h-full bg-cyan-500 rounded-full" style={{ width: `${token.kairosScore}%` }} />
-                        </div>
-                        <span className="text-white font-bold text-sm">{token.kairosScore}</span>
-                      </div>
+                      <span className="text-white font-semibold text-sm">{token.kairosScore}</span>
                     </div>
                   </div>
                 </div>
 
-                {/* 交易计划 */}
+                {/* Trading Plan */}
                 <div className="px-4 py-3 bg-slate-800/50 border-t border-slate-800">
-                  <div className="flex items-center justify-between">
-                    <div className="flex gap-6 text-sm">
-                      <div><span className="text-slate-500">入场</span> <span className="text-white ml-1">{formatPrice(token.tradingPlan.entry)}</span></div>
-                      <div><span className="text-slate-500">目标</span> <span className="text-green-400 ml-1">{formatPrice(token.tradingPlan.target)}</span></div>
-                      <div><span className="text-slate-500">止损</span> <span className="text-red-400 ml-1">{formatPrice(token.tradingPlan.stopLoss)}</span></div>
-                      <div><span className="text-slate-500">盈亏比</span> <span className="text-cyan-400 ml-1">{token.tradingPlan.riskReward}</span></div>
+                  <div className="grid grid-cols-4 gap-2 text-center text-sm">
+                    <div>
+                      <p className="text-slate-400 text-xs">入场</p>
+                      <p className="text-cyan-400 font-medium">{formatPrice(token.tradingPlan.entry)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-xs">目标</p>
+                      <p className="text-green-400 font-medium">{formatPrice(token.tradingPlan.target)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-xs">止损</p>
+                      <p className="text-red-400 font-medium">{formatPrice(token.tradingPlan.stopLoss)}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-400 text-xs">盈亏比</p>
+                      <p className="text-white font-medium">{token.tradingPlan.riskReward}</p>
                     </div>
                   </div>
                 </div>
 
-                {/* 交易按钮 - 直接显示在卡片底部 */}
-                <div className="px-4 py-3 bg-slate-900 border-t border-slate-800">
-                  <div className="flex gap-2">
-                    {getPlatforms(token.symbol, token.chain).map(p => (
-                      <a key={p.exchange} href={getTradeUrl(token.symbol, p.exchange)} target="_blank" rel="noopener noreferrer"
-                        className="flex-1 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-center text-sm font-medium transition-colors">
-                        跳转 {p.name}
-                      </a>
-                    ))}
-                  </div>
+                {/* Trade Buttons */}
+                <div className="px-4 py-3 border-t border-slate-800 flex flex-wrap gap-2">
+                  {platforms.map((p) => (
+                    <a
+                      key={p.exchange}
+                      href={getTradeUrl(token.symbol, p.exchange)}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-sm font-medium transition-colors"
+                    >
+                      跳转 {p.name}
+                    </a>
+                  ))}
                 </div>
               </div>
             );
           })}
         </div>
 
-        {/* 底部提示 */}
-        <div className="mt-6 text-center text-xs text-slate-500">
-          <p>实时名单：binance.com/en/alphaevents</p>
-          <p className="mt-1">数据仅供参考，不构成投资建议</p>
-        </div>
+        {filteredTokens.length === 0 && (
+          <div className="text-center py-12">
+            <p className="text-slate-400 text-lg">暂无符合条件的代币</p>
+          </div>
+        )}
       </div>
     </div>
   );
