@@ -112,46 +112,44 @@ export default function TrendingPage() {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950">
+    <div className="min-h-screen bg-black">
       {/* Header */}
-      <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-md border-b border-slate-800">
-        <div className="max-w-6xl mx-auto px-4 py-4">
+      <div className="bg-gradient-to-r from-cyan-600 via-cyan-500 to-cyan-400">
+        <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-xl font-bold text-white">Alpha热力榜</h1>
-              <p className="text-slate-400 text-sm">币安Alpha专区代币 · 实时数据</p>
+              <h1 className="text-2xl font-bold text-black">Alpha热力榜</h1>
+              <p className="text-black/70 text-sm">币安Alpha专区代币 · 实时数据</p>
             </div>
-            <div className="text-right">
-              <p className="text-slate-400 text-xs">更新时间</p>
-              <p className="text-cyan-400 text-sm font-mono">{lastUpdate}</p>
+            <div className="text-right bg-black/20 rounded-lg px-4 py-2">
+              <p className="text-black/70 text-xs">更新时间</p>
+              <p className="text-black font-mono font-bold">{lastUpdate}</p>
             </div>
           </div>
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto px-4 py-6 space-y-6">
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
-            <p className="text-slate-400 text-sm">Alpha代币</p>
-            <p className="text-2xl font-bold text-white">{tokens.length}</p>
+      <div className="max-w-7xl mx-auto px-4 py-6">
+        {/* Stats Bar */}
+        <div className="flex items-center gap-6 mb-6 text-sm">
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">代币:</span>
+            <span className="text-white font-bold">{tokens.length}</span>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 border border-green-900">
-            <p className="text-slate-400 text-sm">强烈推荐</p>
-            <p className="text-2xl font-bold text-green-400">{tokens.filter(t => t.signal === 'strong').length}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">强烈推荐:</span>
+            <span className="text-green-400 font-bold">{tokens.filter(t => t.signal === 'strong').length}</span>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 border border-yellow-900">
-            <p className="text-slate-400 text-sm">关注</p>
-            <p className="text-2xl font-bold text-yellow-400">{tokens.filter(t => t.signal === 'watch').length}</p>
+          <div className="flex items-center gap-2">
+            <span className="text-slate-400">关注:</span>
+            <span className="text-yellow-400 font-bold">{tokens.filter(t => t.signal === 'watch').length}</span>
           </div>
-          <div className="bg-slate-900 rounded-xl p-4 border border-slate-800">
-            <p className="text-slate-400 text-sm">数据来源</p>
-            <p className="text-cyan-400 text-sm font-medium">CoinGecko</p>
-          </div>
+          <div className="flex-1"></div>
+          <span className="text-slate-500">数据来源: CoinGecko</span>
         </div>
 
         {/* Filter */}
-        <div className="flex gap-2">
+        <div className="flex gap-2 mb-6">
           {(['all', 'strong', 'watch'] as const).map((f) => (
             <button
               key={f}
@@ -167,121 +165,120 @@ export default function TrendingPage() {
           ))}
         </div>
 
-        {/* Token List */}
-        <div className="space-y-4">
-          {filteredTokens.map((token) => {
+        {/* Table Header */}
+        <div className="bg-slate-900 rounded-t-xl border-b border-slate-800">
+          <div className="grid grid-cols-12 gap-4 px-4 py-3 text-xs text-slate-400 font-medium">
+            <div className="col-span-1">#</div>
+            <div className="col-span-2">代币</div>
+            <div className="col-span-1 text-right">价格</div>
+            <div className="col-span-1 text-right">24h涨跌</div>
+            <div className="col-span-1 text-right">交易量</div>
+            <div className="col-span-1 text-center">评分</div>
+            <div className="col-span-2 text-center">信号</div>
+            <div className="col-span-3 text-center">交易</div>
+          </div>
+        </div>
+
+        {/* Table Body */}
+        <div className="bg-slate-900 rounded-b-xl border border-t-0 border-slate-800 overflow-hidden">
+          {filteredTokens.map((token, index) => {
             const platforms = getPlatforms(token);
             return (
-              <div key={token.symbol} className="bg-slate-900 rounded-2xl border border-slate-800 overflow-hidden">
-                {/* Header */}
-                <div className="p-4 flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-lg ${
-                      token.rank === 1 ? 'bg-gradient-to-br from-amber-400 to-yellow-600 text-black' :
-                      token.rank === 2 ? 'bg-gradient-to-br from-slate-300 to-slate-500 text-black' :
-                      token.rank === 3 ? 'bg-gradient-to-br from-amber-600 to-amber-800 text-white' :
-                      'bg-slate-800 text-slate-400'
-                    }`}>
-                      {token.rank}
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-white font-bold text-lg">{token.symbol}</span>
-                        <span className="px-2 py-0.5 bg-slate-800 rounded text-slate-400 text-xs">{token.chain}</span>
-                        <span className="px-2 py-0.5 bg-slate-800 rounded text-slate-400 text-xs">{token.category}</span>
-                      </div>
-                      <p className="text-slate-400 text-sm">{token.name}</p>
-                    </div>
+              <div 
+                key={token.symbol} 
+                className={`grid grid-cols-12 gap-4 px-4 py-4 items-center hover:bg-slate-800/50 transition-colors ${
+                  index !== filteredTokens.length - 1 ? 'border-b border-slate-800' : ''
+                }`}
+              >
+                {/* Rank */}
+                <div className="col-span-1">
+                  <span className={`inline-flex items-center justify-center w-8 h-8 rounded-full font-bold ${
+                    token.rank === 1 ? 'bg-amber-500 text-black' :
+                    token.rank === 2 ? 'bg-slate-400 text-black' :
+                    token.rank === 3 ? 'bg-amber-700 text-white' :
+                    'bg-slate-800 text-slate-400'
+                  }`}>
+                    {token.rank}
+                  </span>
+                </div>
+
+                {/* Token Info */}
+                <div className="col-span-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-white font-bold">{token.symbol}</span>
+                    <span className="px-1.5 py-0.5 bg-slate-800 rounded text-slate-400 text-xs">{token.chain}</span>
                   </div>
-                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
-                    token.signal === 'strong' ? 'bg-green-600/20 text-green-400' :
-                    token.signal === 'watch' ? 'bg-yellow-600/20 text-yellow-400' :
-                    'bg-slate-600/20 text-slate-400'
+                  <p className="text-slate-500 text-xs mt-0.5">{token.name}</p>
+                </div>
+
+                {/* Price */}
+                <div className="col-span-1 text-right">
+                  <span className="text-white font-medium">{formatPrice(token.price)}</span>
+                </div>
+
+                {/* 24h Change */}
+                <div className="col-span-1 text-right">
+                  <span className={`font-medium ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                    {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
+                  </span>
+                </div>
+
+                {/* Volume */}
+                <div className="col-span-1 text-right">
+                  <span className="text-slate-300">{formatVolume(token.volume24h)}</span>
+                </div>
+
+                {/* Kairos Score */}
+                <div className="col-span-1 text-center">
+                  <div className="inline-flex items-center gap-2">
+                    <div className="w-12 h-1.5 bg-slate-700 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full rounded-full ${
+                          token.kairosScore >= 70 ? 'bg-green-500' :
+                          token.kairosScore >= 40 ? 'bg-yellow-500' : 'bg-slate-500'
+                        }`}
+                        style={{ width: `${token.kairosScore}%` }}
+                      />
+                    </div>
+                    <span className="text-white text-sm font-medium">{token.kairosScore}</span>
+                  </div>
+                </div>
+
+                {/* Signal */}
+                <div className="col-span-2 text-center">
+                  <span className={`inline-block px-3 py-1 rounded-full text-xs font-medium ${
+                    token.signal === 'strong' ? 'bg-green-500/20 text-green-400' :
+                    token.signal === 'watch' ? 'bg-yellow-500/20 text-yellow-400' :
+                    'bg-slate-500/20 text-slate-400'
                   }`}>
                     {token.signal === 'strong' ? '强烈推荐' : token.signal === 'watch' ? '关注' : '观望'}
                   </span>
                 </div>
 
-                {/* Main Content */}
-                <div className="px-4 pb-4">
-                  <div className="flex flex-col lg:flex-row gap-4">
-                    {/* Stats Grid */}
-                    <div className="flex-1 grid grid-cols-2 md:grid-cols-4 gap-4">
-                      <div className="bg-slate-800/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs">当前价格</p>
-                        <p className="text-white font-bold text-lg">{formatPrice(token.price)}</p>
-                      </div>
-                      <div className="bg-slate-800/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs">24h涨跌</p>
-                        <p className={`font-bold text-lg ${token.priceChange24h >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                          {token.priceChange24h >= 0 ? '+' : ''}{token.priceChange24h.toFixed(2)}%
-                        </p>
-                      </div>
-                      <div className="bg-slate-800/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs">24h交易量</p>
-                        <p className="text-white font-bold">{formatVolume(token.volume24h)}</p>
-                      </div>
-                      <div className="bg-slate-800/50 rounded-xl p-3">
-                        <p className="text-slate-400 text-xs">Kairos评分</p>
-                        <div className="flex items-center gap-2">
-                          <div className="flex-1 h-2 bg-slate-700 rounded-full overflow-hidden">
-                            <div
-                              className={`h-full rounded-full ${
-                                token.kairosScore >= 70 ? 'bg-green-500' :
-                                token.kairosScore >= 40 ? 'bg-yellow-500' : 'bg-slate-500'
-                              }`}
-                              style={{ width: `${token.kairosScore}%` }}
-                            />
-                          </div>
-                          <span className="text-white font-bold">{token.kairosScore}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Trade Buttons */}
-                    <div className="flex flex-wrap items-center gap-2">
-                      {platforms.map((p) => (
-                        <a
-                          key={p.exchange}
-                          href={getTradeUrl(token.symbol, p.exchange)}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className={`px-4 py-2 rounded-lg text-sm font-bold transition-all hover:scale-105 ${
-                            p.exchange === 'binance' 
-                              ? 'bg-gradient-to-r from-yellow-500 to-amber-600 text-black' 
-                              : p.exchange === 'jupiter'
-                              ? 'bg-purple-600 hover:bg-purple-500 text-white'
-                              : p.exchange === 'uniswap'
-                              ? 'bg-pink-600 hover:bg-pink-500 text-white'
-                              : p.exchange === 'raydium'
-                              ? 'bg-blue-600 hover:bg-blue-500 text-white'
-                              : 'bg-cyan-600 hover:bg-cyan-500 text-white'
-                          }`}
-                        >
-                          跳转 {p.name}
-                        </a>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Trading Plan */}
-                  <div className="mt-4 grid grid-cols-4 gap-2 bg-slate-800/30 rounded-xl p-3">
-                    <div className="text-center">
-                      <p className="text-slate-400 text-xs">入场价</p>
-                      <p className="text-cyan-400 font-medium">{formatPrice(token.tradingPlan.entry)}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-400 text-xs">目标价</p>
-                      <p className="text-green-400 font-medium">{formatPrice(token.tradingPlan.target)}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-400 text-xs">止损价</p>
-                      <p className="text-red-400 font-medium">{formatPrice(token.tradingPlan.stopLoss)}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-slate-400 text-xs">盈亏比</p>
-                      <p className="text-white font-medium">1:{token.tradingPlan.riskReward}</p>
-                    </div>
+                {/* Trade Buttons */}
+                <div className="col-span-3">
+                  <div className="flex items-center justify-center gap-2 flex-wrap">
+                    {platforms.map((p) => (
+                      <a
+                        key={p.exchange}
+                        href={getTradeUrl(token.symbol, p.exchange)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 ${
+                          p.exchange === 'binance' 
+                            ? 'bg-yellow-400 text-black hover:bg-yellow-300' 
+                            : p.exchange === 'jupiter'
+                            ? 'bg-purple-600 hover:bg-purple-500 text-white'
+                            : p.exchange === 'uniswap'
+                            ? 'bg-pink-600 hover:bg-pink-500 text-white'
+                            : p.exchange === 'raydium'
+                            ? 'bg-blue-600 hover:bg-blue-500 text-white'
+                            : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                        }`}
+                      >
+                        {p.name}
+                      </a>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -289,10 +286,32 @@ export default function TrendingPage() {
           })}
         </div>
 
+        {/* Trading Plan Modal - 简化版 */}
+        <div className="mt-6 bg-slate-900 rounded-xl p-4 border border-slate-800">
+          <h3 className="text-white font-bold mb-4">交易计划参考</h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+            <div className="text-center">
+              <p className="text-slate-400">入场价</p>
+              <p className="text-cyan-400 font-medium">建议当前价附近</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-400">目标价</p>
+              <p className="text-green-400 font-medium">+5%~30%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-400">止损价</p>
+              <p className="text-red-400 font-medium">-5%~-15%</p>
+            </div>
+            <div className="text-center">
+              <p className="text-slate-400">风险提示</p>
+              <p className="text-yellow-400 font-medium">DYOR</p>
+            </div>
+          </div>
+        </div>
+
         {/* Footer */}
-        <div className="text-center py-6 text-slate-500 text-sm">
-          <p>数据来源：binance.com/en/alphaevents</p>
-          <p className="mt-1">代币列表可能动态变化，建议以币安官方为准</p>
+        <div className="mt-6 text-center text-slate-500 text-sm">
+          <p>数据来源：binance.com/en/alphaevents · 代币列表可能动态变化</p>
         </div>
       </div>
     </div>
