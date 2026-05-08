@@ -41,41 +41,76 @@ export default function TrendingPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdate, setLastUpdate] = useState<string>('');
+  const [dataSource, setDataSource] = useState<string>('');
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      // 前端直接调用支持CORS的API
-      const response = await fetch(
-        'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=goatseusd,neiro,fwog,peanut-the-squirrel,popcat,moodeng,dogwifcoin,brett,ponke,slerf&order=volume_desc&sparkline=false&price_change_percentage=24h'
-      );
-      const binceData: Array<{
-        id: string;
-        symbol: string;
-        name: string;
-        current_price: number;
-        price_change_percentage_24h: number;
-        total_volume: number;
-        high_24h: number;
-        low_24h: number;
-      }> = await response.json();
+      let data: any = null;
+      let source = '';
       
-      if (!Array.isArray(binceData)) {
-        throw new Error('Invalid data');
+      // 尝试1: CoinGecko
+      try {
+        const response = await fetch(
+          'https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=goatseusd,neiro,fwog,peanut-the-squirrel,popcat,moodeng,dogwifcoin,brett,ponke,slerf&order=volume_desc&sparkline=false&price_change_percentage=24h',
+          { signal: AbortSignal.timeout(8000) }
+        );
+        if (response.ok) {
+          const json = await response.json();
+          if (Array.isArray(json) && json.length > 0) {
+            data = json;
+            source = 'CoinGecko';
+          }
+        }
+      } catch (e) { /* 继续下一个 */ }
+      
+      // 尝试2: Bybit行情
+      if (!data) {
+        try {
+          const symbols = ['GOATUSDT', 'NEIROUSDT', 'WIFUSDT', 'POPCATUSDT', 'FWOGUSDT', 'PNUTUSDT', 'MOODENGUSDT', 'BRETTUSDT', 'PONKEUSDT', 'SLERFUSDT'];
+          const promises = symbols.slice(0, 5).map(s => 
+            fetch(`https://api.bybit.com/v5/market/tickers?category=spot&symbol=${s}`, { signal: AbortSignal.timeout(5000) })
+              .then(r => r.ok ? r.json() : null)
+              .catch(() => null)
+          );
+          const results = await Promise.all(promises);
+          const validResults = results.filter(r => r?.result?.list?.[0]);
+          if (validResults.length > 0) {
+            data = validResults.map((r: any) => {
+              const t = r.result.list[0];
+              return {
+                id: t.symbol.toLowerCase(),
+                symbol: t.symbol.replace('USDT', ''),
+                name: t.symbol.replace('USDT', ''),
+                current_price: parseFloat(t.lastPrice || 0),
+                price_change_percentage_24h: parseFloat(t.price24hPcnt || 0) * 100,
+                total_volume: parseFloat(t.volume24h || 0) * parseFloat(t.lastPrice || 1),
+                high_24h: parseFloat(t.highPrice24h || 0),
+                low_24h: parseFloat(t.lowPrice24h || 0),
+              };
+            });
+            source = 'Bybit';
+          }
+        } catch (e) { /* 继续 */ }
       }
       
+      if (!data || !Array.isArray(data)) {
+        setError('无法连接数据源，请稍后重试');
+        setLoading(false);
+        return;
+      }
+      
+      setDataSource(source);
+
       // 映射到TokenData
-      const validData = binceData
-        .filter(t => t.current_price > 0)
-        .map((coin) => {
+      const validData = data
+        .filter((t: any) => t.current_price > 0)
+        .map((coin: any) => {
           const price = coin.current_price;
           const change24h = coin.price_change_percentage_24h || 0;
           const volume = coin.total_volume || 0;
-          const high24h = coin.high_24h || price * 1.05;
-          const low24h = coin.low_24h || price * 0.95;
-          const symbol = coin.symbol.toUpperCase();
 
           // Kairos评分
           let score = 50;
@@ -105,19 +140,19 @@ export default function TrendingPage() {
           // 交易计划
           const entry = price;
           const targetMultiplier = signal === 'strong' ? 0.15 : signal === 'watch' ? 0.08 : 0.05;
-          const stopMultiplier = signal === 'strong' ? 0.95 : signal === 'watch' ? 0.93 : 0.90;
+          const stopMultiplier = signal === 'strong' ? 0.05 : signal === 'watch' ? 0.07 : 0.10;
           const target = price * (1 + targetMultiplier);
-          const stopLoss = price * (1 - (1 - stopMultiplier));
+          const stopLoss = price * (1 - stopMultiplier);
           const riskReward = ((target - entry) / (entry - stopLoss)).toFixed(2);
 
           return {
-            symbol,
-            name: coin.name,
+            symbol: coin.symbol?.toUpperCase() || coin.name?.toUpperCase() || '',
+            name: coin.name || coin.symbol || '',
             price,
             priceChange24h: change24h,
             volume24h: volume,
-            high24h,
-            low24h,
+            high24h: coin.high_24h || price * 1.05,
+            low24h: coin.low_24h || price * 0.95,
             kairosScore: score,
             signal,
             riskLevel,
@@ -129,31 +164,31 @@ export default function TrendingPage() {
               riskReward
             }
           };
-        })
-        .filter(Boolean) as (TokenData & { rank?: number })[];
+        });
 
       // 按Kairos评分排序
-      validData.sort((a, b) => b.kairosScore - a.kairosScore);
-      validData.forEach((t, i) => t.rank = i + 1);
+      validData.sort((a: any, b: any) => b.kairosScore - a.kairosScore);
+      const rankedData = validData.map((t: any, i: number) => ({ ...t, rank: i + 1 }));
 
-      setTokens(validData as (TokenData & { rank: number })[]);
+      setTokens(rankedData);
       setLastUpdate(new Date().toLocaleTimeString());
       setLoading(false);
 
     } catch (err) {
       console.error('Fetch error:', err);
-      setError('无法获取数据，请检查网络');
+      setError('无法获取数据，请检查网络连接');
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 60000); // 每分钟刷新
+    const interval = setInterval(fetchData, 60000);
     return () => clearInterval(interval);
   }, [fetchData]);
 
   const formatPrice = (price: number) => {
+    if (price < 0.00001) return `$${price.toFixed(8)}`;
     if (price < 0.001) return `$${price.toFixed(6)}`;
     if (price < 0.01) return `$${price.toFixed(5)}`;
     if (price < 1) return `$${price.toFixed(4)}`;
@@ -184,19 +219,6 @@ export default function TrendingPage() {
     }
   };
 
-  if (error) {
-    return (
-      <div className="min-h-screen bg-slate-950 text-white p-8">
-        <div className="max-w-4xl mx-auto text-center py-20">
-          <div className="text-red-400 text-xl mb-4">{error}</div>
-          <button onClick={fetchData} className="px-6 py-3 bg-blue-600 rounded-lg">
-            重试
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-950 text-white">
       {/* Header */}
@@ -221,7 +243,7 @@ export default function TrendingPage() {
               <span className="text-slate-400">实时数据</span>
             </div>
             <div className="text-slate-500">|</div>
-            <div className="text-slate-400">数据来源：Binance API</div>
+            <div className="text-slate-400">数据来源：{dataSource || '加载中...'}</div>
             <div className="text-slate-500">|</div>
             <div className="text-slate-400">更新时间：{lastUpdate}</div>
           </div>
@@ -230,6 +252,13 @@ export default function TrendingPage() {
         {loading && tokens.length === 0 ? (
           <div className="text-center py-20">
             <div className="text-slate-400">加载中...</div>
+          </div>
+        ) : error ? (
+          <div className="text-center py-20">
+            <div className="text-red-400 text-xl mb-4">{error}</div>
+            <button onClick={fetchData} className="px-6 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg">
+              重试
+            </button>
           </div>
         ) : (
           <>
