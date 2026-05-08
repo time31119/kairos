@@ -137,7 +137,7 @@ function getPlatforms(symbol: string, chain: string) {
 export default function TrendingPage() {
   const [tokens, setTokens] = useState<TokenData[]>(BACKUP_DATA);
   const [filter, setFilter] = useState<'all' | 'strong' | 'watch'>('all');
-  const [lastUpdate, setLastUpdate] = useState('');
+  const [lastUpdate, setLastUpdate] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   // 获取数据
@@ -157,7 +157,7 @@ export default function TrendingPage() {
         data.sort((a, b) => b.kairosScore - a.kairosScore);
         data.forEach((t, i) => t.rank = i + 1);
         setTokens(data);
-        setLastUpdate(new Date().toLocaleTimeString());
+        if (typeof window !== "undefined") { setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"})); }
       }
     } catch (e) {
       // 失败使用备用
@@ -165,7 +165,7 @@ export default function TrendingPage() {
       data.sort((a, b) => b.kairosScore - a.kairosScore);
       data.forEach((t, i) => t.rank = i + 1);
       setTokens(data);
-      setLastUpdate(new Date().toLocaleTimeString());
+      setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"}));
     } finally {
       setLoading(false);
     }
@@ -174,7 +174,7 @@ export default function TrendingPage() {
   useEffect(() => {
     // 立即显示备用数据
     setTokens(BACKUP_DATA);
-    setLastUpdate(new Date().toLocaleTimeString());
+    setLastUpdate(new Date().toLocaleString("zh-CN", {hour: "2-digit", minute: "2-digit", second: "2-digit"}));
     // 然后尝试获取实时数据
     fetchData();
     const interval = setInterval(fetchData, 30000); // 每30秒刷新
