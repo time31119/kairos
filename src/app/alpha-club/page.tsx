@@ -299,7 +299,7 @@ export default function AlphaClubPage() {
                   {typeof tier.price === 'number' ? (
                     <>
                       <span className="text-3xl font-bold text-white">¥{tier.price}</span>
-                      <span className="text-slate-500">{tier.period || '/永久'}</span>
+                      <span className="text-slate-500"> USDT/月</span>
                     </>
                   ) : (
                     <span className="text-3xl font-bold text-white">{tier.price}</span>
