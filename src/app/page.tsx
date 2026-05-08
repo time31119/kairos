@@ -19,7 +19,6 @@ const BINANCE_ALPHA_TOKENS = [
   { id: 'moodeng', symbol: 'MOODENG', name: 'Moodeng', category: 'Meme', chain: 'ETH' },
   { id: 'chill-guy', symbol: 'CHILLGUY', name: 'Chill Guy', category: 'Meme', chain: 'ETH' },
   { id: 'dog-wif-nft', symbol: 'WIF', name: 'DogWifHat', category: 'Meme', chain: 'SOL' },
-  { id: 'pepe', symbol: 'PEPE', name: 'Pepe', category: 'Meme', chain: 'ETH' },
   { id: 'brett', symbol: 'BRETT', name: 'Brett', category: 'Meme', chain: 'BASE' },
   { id: 'ponke', symbol: 'PONKE', name: 'Ponke', category: 'Meme', chain: 'SOL' },
   { id: 'pingu-the-penguin', symbol: 'PINGU', name: 'Pingu', category: 'Meme', chain: 'SOL' },
