@@ -186,91 +186,111 @@ export default function HomePage() {
   const [scanning, setScanning] = useState(false);
   const [scanResult, setScanResult] = useState('');
 
-  // 获取Alpha代币数据
+  // 获取Alpha代币数据（使用新的Alpha Ranking API）
   const fetchAlphaTokens = async () => {
     try {
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${BINANCE_ALPHA_IDS.join(',')}&order=volume_desc&sparkline=false&price_change_percentage=1h,24h`
-      );
+      const response = await fetch('/api/alpha-ranking');
+      const json = await response.json();
       
-      if (!response.ok) throw new Error('API请求失败');
-      
-      const data: CoinMarketData[] = await response.json();
-      
-      // 计算每个代币的投资价值评分
-      const scored = data.map((coin) => {
-        const change24h = coin.price_change_percentage_24h || 0;
-        const change1h = coin.price_change_percentage_1h_in_currency || 0;
-        const volume = coin.total_volume;
-        const marketCap = coin.market_cap;
-        
-        // 动量评分 (40%)
-        const momentum = Math.min(Math.max((change1h + change24h) / 2, -20), 30) * 4;
-        
-        // 活跃度评分 (30%) - 基于交易量
-        const volumeScore = Math.min((volume / 1e8) * 100, 100) * 0.3;
-        
-        // 市值潜力 (30%) - 小市值更有爆发力
-        const potential = Math.max(100 - (marketCap / 1e8) * 10, 10) * 0.3;
-        
-        const totalScore = Math.round(Math.min(momentum + volumeScore + potential, 100));
-        
-        // 判断信号
-        let signal: 'hot' | 'rising' | 'watch' | 'cooling' = 'watch';
-        let signalReason = '正常波动';
-        let tags: string[] = [];
-        
-        if (totalScore >= 75) {
-          signal = 'hot';
-          signalReason = '强势机会';
-          tags = ['强势', '关注'];
-        } else if (change1h > 5) {
-          signal = 'rising';
-          signalReason = '1小时强势';
-          tags = ['拉升中'];
-        } else if (totalScore >= 50) {
-          signal = 'watch';
-          signalReason = '值得观察';
-          tags = ['观察'];
-        } else {
-          signal = 'cooling';
-          signalReason = '调整中';
-          tags = ['冷却'];
-        }
-        
-        // 1h变化为负数时不展示1h数据
-        const displayChange1h = change1h > 0 ? change1h : 0;
-        
-        return {
-          rank: 0,
-          id: coin.id,
-          name: coin.name,
-          symbol: coin.symbol.toUpperCase(),
-          chain: BINANCE_ALPHA_TOKENS.find(t => t.id === coin.id)?.chain || 'ETH',
-          chainIcon: CHAIN_ICONS[BINANCE_ALPHA_TOKENS.find(t => t.id === coin.id)?.chain || 'ETH'] || '🔷',
-          price: `$${coin.current_price >= 1 ? coin.current_price.toFixed(2) : coin.current_price.toFixed(6)}`,
-          change24h: change24h,
-          change1h: displayChange1h,
-          volume: `$${(volume / 1e6).toFixed(1)}M`,
-          marketCap: `$${(marketCap / 1e6).toFixed(1)}M`,
-          opportunityScore: totalScore,
-          signal,
-          signalReason,
-          valueRatio: volume / (marketCap || 1),
-          tags,
-        };
-      });
-      
-      // 按投资价值评分排序，只展示评分>=50的
-      const sorted = scored
-        .filter(t => t.opportunityScore >= 50)
-        .sort((a, b) => b.opportunityScore - a.opportunityScore)
-        .slice(0, 6)
-        .map((t, i) => ({ ...t, rank: i + 1 }));
-      
-      setOpportunities(sorted);
+      if (json.success && json.data.length > 0) {
+        // 使用API返回的数据
+        const apiData = json.data.slice(0, 6).map((token: { symbol: string; name: string; chain: string; alphaScore: number; priceChange1h: number; priceChange24h: number; volume24h: number; smartMoneyScore: number; signals: string[] }, i: number) => ({
+          rank: i + 1,
+          id: token.symbol.toLowerCase(),
+          name: token.name,
+          symbol: token.symbol,
+          chain: token.chain,
+          chainIcon: CHAIN_ICONS[token.chain] || '🔷',
+          price: '$--', // 价格从API获取
+          change24h: token.priceChange24h,
+          change1h: token.priceChange1h,
+          volume: `$${(token.volume24h / 1e6).toFixed(1)}M`,
+          marketCap: '$--',
+          opportunityScore: token.alphaScore,
+          signal: token.alphaScore >= 70 ? 'hot' as const : token.alphaScore >= 50 ? 'watch' as const : 'cooling' as const,
+          signalReason: token.signals[0] || '正常',
+          valueRatio: 0,
+          tags: token.signals.slice(0, 2),
+        }));
+        setOpportunities(apiData);
+      } else {
+        // 兜底：使用CoinGecko
+        throw new Error('API无数据');
+      }
     } catch (error) {
-      console.error('获取数据失败:', error);
+      // 兜底逻辑
+      try {
+        const response = await fetch(
+          `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${BINANCE_ALPHA_IDS.join(',')}&order=volume_desc&sparkline=false&price_change_percentage=1h,24h`
+        );
+        
+        if (!response.ok) throw new Error('API请求失败');
+        
+        const data: CoinMarketData[] = await response.json();
+        
+        const scored = data.map((coin) => {
+          const change24h = coin.price_change_percentage_24h || 0;
+          const change1h = coin.price_change_percentage_1h_in_currency || 0;
+          const volume = coin.total_volume;
+          const marketCap = coin.market_cap;
+          
+          const momentum = Math.min(Math.max((change1h + change24h) / 2, -20), 30) * 4;
+          const volumeScore = Math.min((volume / 1e8) * 100, 100) * 0.3;
+          const potential = Math.max(100 - (marketCap / 1e8) * 10, 10) * 0.3;
+          const totalScore = Math.round(Math.min(momentum + volumeScore + potential, 100));
+          
+          let signal: 'hot' | 'rising' | 'watch' | 'cooling' = 'watch';
+          let signalReason = '正常波动';
+          let tags: string[] = [];
+          
+          if (totalScore >= 75) {
+            signal = 'hot';
+            signalReason = '强势机会';
+            tags = ['强势', '关注'];
+          } else if (change1h > 5) {
+            signal = 'rising';
+            signalReason = '1小时强势';
+            tags = ['拉升中'];
+          } else if (totalScore >= 50) {
+            signal = 'watch';
+            signalReason = '值得观察';
+            tags = ['观察'];
+          } else {
+            signal = 'cooling';
+            signalReason = '调整中';
+            tags = ['冷却'];
+          }
+          
+          return {
+            rank: 0,
+            id: coin.id,
+            name: coin.name,
+            symbol: coin.symbol.toUpperCase(),
+            chain: BINANCE_ALPHA_TOKENS.find(t => t.id === coin.id)?.chain || 'ETH',
+            chainIcon: CHAIN_ICONS[BINANCE_ALPHA_TOKENS.find(t => t.id === coin.id)?.chain || 'ETH'] || '🔷',
+            price: `$${coin.current_price >= 1 ? coin.current_price.toFixed(2) : coin.current_price.toFixed(6)}`,
+            change24h: change24h,
+            change1h: change1h > 0 ? change1h : 0,
+            volume: `$${(volume / 1e6).toFixed(1)}M`,
+            marketCap: `$${(marketCap / 1e6).toFixed(1)}M`,
+            opportunityScore: totalScore,
+            signal,
+            signalReason,
+            valueRatio: volume / (marketCap || 1),
+            tags,
+          };
+        });
+        
+        const sorted = scored
+          .filter(t => t.opportunityScore >= 50)
+          .sort((a, b) => b.opportunityScore - a.opportunityScore)
+          .slice(0, 6)
+          .map((t, i) => ({ ...t, rank: i + 1 }));
+        
+        setOpportunities(sorted);
+      } catch (e) {
+        console.error('获取数据失败:', e);
+      }
     }
   };
 
