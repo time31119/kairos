@@ -566,18 +566,12 @@ export default function HomePage() {
 
         {/* Alpha热力榜 */}
         <section className="mb-12">
-          <div className="flex justify-between items-center mb-6">
-            <div>
-              <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🔥</span>
-                Alpha热力榜
-              </h2>
-              <p className="text-slate-400 text-sm mt-1">
-                币安Alpha专区代币实时排名，按投资价值评分动态排序
-              </p>
-            </div>
-            <Link href="/trending" className="text-blue-400 hover:text-blue-300 text-sm">
-              查看完整榜单 →
+          <div className="flex justify-between items-center mb-4">
+            <h2 className="text-xl font-bold text-white">
+              🔥 Alpha热力榜
+            </h2>
+            <Link href="/trending" className="flex items-center gap-2 px-4 py-2 bg-blue-500/20 hover:bg-blue-500/30 border border-blue-500/30 rounded-lg text-blue-400 text-sm transition">
+              查看全部 →
             </Link>
           </div>
 
@@ -587,97 +581,50 @@ export default function HomePage() {
               <p className="text-slate-400">加载中...</p>
             </div>
           ) : (
-            <div className="bg-slate-800/30 rounded-xl border border-blue-900/30 overflow-hidden">
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
               {opportunities.map((token) => {
                 const signalStyle = getSignalStyle(token.signal);
                 return (
                   <div 
                     key={token.id}
-                    className="p-4 hover:bg-slate-800/50 transition border-b border-blue-900/20 last:border-0"
+                    className="bg-slate-800/50 rounded-xl p-4 hover:bg-slate-800/70 transition border border-blue-900/20"
                   >
-                      <div className="flex items-center justify-between">
-                        {/* 左侧：排名和代币信息 */}
-                        <div className="flex items-center gap-4">
-                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
-                            token.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                            token.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
-                            token.rank === 3 ? 'bg-orange-600/20 text-orange-400' :
-                            'bg-slate-700/50 text-slate-400'
-                          }`}>
-                            {token.rank}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <span className="text-white font-semibold">{token.symbol}</span>
-                              <span className="text-sm text-slate-500">{token.chainIcon}</span>
-                              <span className={`px-2 py-0.5 rounded text-xs ${signalStyle.bg} ${signalStyle.text}`}>
-                                {signalStyle.label}
-                              </span>
-                            </div>
-                            <div className="text-xs text-slate-500 mt-0.5">
-                              {token.signalReason} · {token.tags.join(' · ')}
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 中间：价格信息 */}
-                        <div className="hidden md:flex items-center gap-8">
-                          <div className="text-right">
-                            <div className="text-white font-medium">{token.price}</div>
-                            <div className="text-xs text-slate-500">当前价格</div>
-                          </div>
-                          <div className="text-right">
-                            <div className={`font-semibold ${
-                              token.change24h >= 0 ? 'text-green-400' : 'text-red-400'
-                            }`}>
-                              {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
-                            </div>
-                            <div className="text-xs text-slate-500">24h</div>
-                          </div>
-                          {token.change1h > 0 && (
-                            <div className="text-right">
-                              <div className="font-semibold text-green-400">
-                                +{token.change1h.toFixed(2)}%
-                              </div>
-                              <div className="text-xs text-slate-500">1h</div>
-                            </div>
-                          )}
-                        </div>
-
-                        {/* 右侧：评分 */}
-                        <div className="text-right">
-                          <div className={`text-2xl font-bold ${
-                            token.opportunityScore >= 70 ? 'text-green-400' :
-                            token.opportunityScore >= 55 ? 'text-blue-400' :
-                            'text-slate-400'
-                          }`}>
-                            {token.opportunityScore}
-                          </div>
-                          <div className="text-xs text-slate-500">机会评分</div>
-                        </div>
-                      </div>
-
-                      {/* 移动端价格 */}
-                      <div className="flex md:hidden items-center gap-4 mt-3 pt-3 border-t border-slate-700/50">
-                        <div className="text-white">{token.price}</div>
-                        <div className={`px-2 py-0.5 rounded text-sm ${
-                          token.change24h >= 0 ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <span className={`w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold ${
+                          token.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
+                          token.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
+                          token.rank === 3 ? 'bg-orange-600/20 text-orange-400' :
+                          'bg-slate-700/50 text-slate-400'
                         }`}>
-                          {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
-                        </div>
+                          {token.rank}
+                        </span>
+                        <span className="text-white font-bold">{token.symbol}</span>
                       </div>
+                      <span className={`px-2 py-0.5 rounded text-xs ${signalStyle.bg} ${signalStyle.text}`}>
+                        {signalStyle.label}
+                      </span>
                     </div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="text-slate-400">{token.price}</span>
+                      <span className={`font-semibold ${
+                        token.change24h >= 0 ? 'text-green-400' : 'text-red-400'
+                      }`}>
+                        {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(1)}%
+                      </span>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-700/50 flex items-center justify-between">
+                      <span className="text-xs text-slate-500">{token.volume}</span>
+                      <span className={`text-lg font-bold ${
+                        token.opportunityScore >= 70 ? 'text-green-400' :
+                        token.opportunityScore >= 55 ? 'text-blue-400' : 'text-slate-400'
+                      }`}>
+                        {token.opportunityScore}
+                      </span>
+                    </div>
+                  </div>
                 );
               })}
-
-              {/* 无机会时提示 */}
-              {opportunities.filter(t => t.opportunityScore >= 50).length === 0 && !loading && (
-                <div className="text-center py-12 text-slate-500">
-                  <div className="text-4xl mb-4">📊</div>
-                  <p>今日暂无符合条件的Alpha机会</p>
-                  <p className="text-sm mt-2">所有Alpha代币当前处于调整期，建议关注候选池</p>
-                </div>
-              )}
             </div>
           )}
         </section>
