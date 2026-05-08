@@ -10,7 +10,6 @@ import { AuthButton } from '@/components/AuthButton';
 
 // 币安Alpha专区代币（确认在Alpha专区的代币 - 2025年）
 const BINANCE_ALPHA_TOKENS = [
-  // === Meme 代币（Alpha专区主力）===
   { id: 'neiro-eu', symbol: 'NEIRO', name: 'Neiro', category: 'Meme', chain: 'ETH' },
   { id: 'goat', symbol: 'GOAT', name: 'Goatseus Maximus', category: 'Meme', chain: 'ETH' },
   { id: 'fwog-2', symbol: 'FWOG', name: 'FWOG', category: 'Meme', chain: 'ETH' },
@@ -27,7 +26,6 @@ const BINANCE_ALPHA_TOKENS = [
   { id: 'slerf', symbol: 'SLERF', name: 'Slerf', category: 'Meme', chain: 'SOL' },
   { id: 'michi', symbol: 'MICHI', name: 'Michi', category: 'Meme', chain: 'SOL' },
   { id: 'degen', symbol: 'DEGEN', name: 'Degen', category: 'Meme', chain: 'SOL' },
-  // === DeFi / 基础设施 ===
   { id: 'jito-2', symbol: 'JTO', name: 'Jito', category: 'DeFi', chain: 'SOL' },
   { id: 'drift-protocol', symbol: 'DRIFT', name: 'Drift Protocol', category: 'DeFi', chain: 'SOL' },
   { id: 'kamino', symbol: 'KMNO', name: 'Kamino', category: 'DeFi', chain: 'SOL' },
@@ -47,23 +45,11 @@ const ALPHA_CANDIDATES = [
   { id: 'aios', symbol: 'AIOS', name: 'AIOS', category: 'AI', chain: 'SOL' },
 ];
 
-// 主流代币黑名单（排除这些，不显示也不推荐）
-const MAJOR_TOKENS_BLACKLIST = [
-  'bitcoin', 'ethereum', 'tether', 'binancecoin', 'solana',
-  'ripple', 'usd-coin', 'cardano', 'dogecoin', 'tron',
-  'avalanche-2', 'shiba-inu', 'polkadot', 'chainlink', 'polygon',
-  'litecoin', 'uniswap', 'bitcoin-cash', 'internet-computer',
-  'worldcoin-wld', 'arkham', 'celestia', 'floki', 'binance-usd',
-];
-
 // 链ID映射
 const CHAIN_ICONS: Record<string, string> = {
   ETH: '🔷',
   SOL: '🌟',
   BASE: '🔵',
-  BSC: '🔴',
-  ARB: '🔶',
-  OP: '🔵',
 };
 
 // CoinGecko代币市场数据接口
@@ -73,12 +59,15 @@ interface CoinMarketData {
   name: string;
   current_price: number;
   price_change_percentage_24h: number;
+  price_change_percentage_1h_in_currency?: number;
   total_volume: number;
   market_cap: number;
+  high_24h: number;
+  low_24h: number;
 }
 
 // 接口定义
-interface TrendingToken {
+interface AlphaOpportunity {
   rank: number;
   id: string;
   name: string;
@@ -86,14 +75,19 @@ interface TrendingToken {
   chain: string;
   chainIcon: string;
   price: string;
-  change24h: string;
-  changeColor: 'green' | 'red';
+  change24h: number;
+  change1h: number;
   volume: string;
   marketCap: string;
-  aiScore: number;
+  // 投资价值评分
+  opportunityScore: number;
+  // 投资信号
+  signal: 'hot' | 'rising' | 'watch' | 'cooling';
+  // 信号说明
+  signalReason: string;
+  // 性价比指标 (涨幅/市值)
+  valueRatio: number;
   tags: string[];
-  signal: 'hot' | 'rising' | 'stable' | 'cooling';
-  binanceAlpha: boolean;
 }
 
 interface TodayPick {
@@ -111,7 +105,7 @@ interface TodayPick {
 }
 
 export default function Home() {
-  const [tokens, setTokens] = useState<TrendingToken[]>([]);
+  const [opportunities, setOpportunities] = useState<AlphaOpportunity[]>([]);
   const [todayPicks, setTodayPicks] = useState<TodayPick[]>([]);
   const [loading, setLoading] = useState(true);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -121,65 +115,75 @@ export default function Home() {
   const [scanning, setScanning] = useState(false);
   const [contractInput, setContractInput] = useState('');
 
-  // AI热度评分
-  const calculateAiScore = (volume: number, change24h: number, marketCap: number): number => {
-    const volumeScore = Math.min(30, Math.log10(volume + 1) * 3);
-    const changeScore = Math.abs(change24h) > 50 ? 25 : Math.abs(change24h) * 0.5;
-    const momentumScore = change24h > 0 ? 25 : Math.max(0, 15 - Math.abs(change24h));
-    const capScore = Math.min(20, Math.log10(marketCap + 1) * 2);
-    return Math.round(Math.min(100, volumeScore + changeScore + momentumScore + capScore));
-  };
-
-  // Kairos潜力评分
-  const calculateKairosScore = (volume: number, change24h: number): number => {
-    const volumeScore = Math.min(35, Math.log10(volume + 1) * 4);
-    const momentumScore = change24h > 20 ? 35 : change24h > 0 ? 25 : 15;
-    const trendScore = change24h > 0 ? 30 : Math.max(10, 20 - Math.abs(change24h));
-    return Math.round(Math.min(100, volumeScore + momentumScore + trendScore));
-  };
-
-  // 获取信号
-  const getSignal = (change24h: number, volume: number): 'hot' | 'rising' | 'stable' | 'cooling' => {
-    if (change24h > 30 && volume > 50000000) return 'hot';
-    if (change24h > 10) return 'rising';
-    if (change24h > -10) return 'stable';
-    return 'cooling';
-  };
-
-  // 获取社交热度
-  const getSocialBuzz = (volume: number): string => {
-    if (volume > 100000000) return '爆火';
-    if (volume > 50000000) return '热门';
-    if (volume > 10000000) return '活跃';
-    return '一般';
-  };
-
-  // 生成推荐理由
-  const generateReason = (category: string, change24h: number, volume: number): string => {
-    const reasons: string[] = [];
+  // 计算投资价值评分 - 只关注有意义的指标
+  const calculateOpportunityScore = (
+    change24h: number,
+    change1h: number,
+    volume: number,
+    marketCap: number
+  ): { score: number; signal: 'hot' | 'rising' | 'watch' | 'cooling'; reason: string; valueRatio: number } => {
+    // 性价比指标：涨幅/市值对数 (小市值+高涨幅 = 机会)
+    const valueRatio = marketCap > 0 ? (change24h / Math.log10(marketCap + 1)) * 10 : 0;
     
-    if (change24h > 20) reasons.push('24小时涨幅强劲');
-    if (volume > 50000000) reasons.push('链上交易活跃');
-    if (category.includes('AI')) reasons.push('AI叙事加持');
-    if (category.includes('Meme')) reasons.push('Meme热潮');
+    // 1. 动量评分 (40分) - 1h变化更重要
+    let momentumScore = 0;
+    let signalReason = '';
     
-    if (reasons.length === 0) reasons.push('市场关注度提升');
-    return reasons.join('，');
-  };
+    if (change1h >= 5) {
+      momentumScore = 40;
+      signalReason = '1小时强势拉升';
+    } else if (change1h >= 2) {
+      momentumScore = 30;
+      signalReason = '短期动量强劲';
+    } else if (change1h >= 0) {
+      momentumScore = 20;
+      signalReason = '保持上升势头';
+    } else if (change24h >= 20) {
+      momentumScore = 25;
+      signalReason = '24h持续上涨';
+    } else if (change24h >= 10) {
+      momentumScore = 15;
+      signalReason = '今日表现稳健';
+    } else if (change24h >= 0) {
+      momentumScore = 10;
+      signalReason = '横盘整理';
+    } else {
+      momentumScore = 0;
+      signalReason = '今日回调';
+    }
 
-  // 格式化价格
-  const formatPrice = (price: number): string => {
-    if (price >= 1) return `$${price.toFixed(2)}`;
-    if (price >= 0.01) return `$${price.toFixed(4)}`;
-    return `$${price.toFixed(6)}`;
-  };
+    // 2. 交易活跃度 (30分)
+    const volumeScore = Math.min(30, Math.log10(volume + 1) * 3.5);
 
-  // 格式化大数字
-  const formatLargeNumber = (num: number): string => {
-    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
-    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
-    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
-    return `$${num.toFixed(2)}`;
+    // 3. 市值评估 (30分) - 小市值更容易爆发
+    let capScore = 0;
+    if (marketCap < 1e6) {
+      capScore = 30; // 微市值 = 高爆发潜力
+    } else if (marketCap < 1e7) {
+      capScore = 25;
+    } else if (marketCap < 1e8) {
+      capScore = 20;
+    } else if (marketCap < 5e8) {
+      capScore = 15;
+    } else {
+      capScore = 10;
+    }
+
+    const totalScore = Math.round(momentumScore + volumeScore + capScore);
+
+    // 信号判定
+    let signal: 'hot' | 'rising' | 'watch' | 'cooling';
+    if (totalScore >= 70 && change24h > 10) {
+      signal = 'hot';
+    } else if (totalScore >= 55 && change24h > 5) {
+      signal = 'rising';
+    } else if (totalScore >= 40 && change24h > 0) {
+      signal = 'watch';
+    } else {
+      signal = 'cooling';
+    }
+
+    return { score: totalScore, signal, reason: signalReason, valueRatio };
   };
 
   // 获取Alpha专区代币真实数据
@@ -187,50 +191,60 @@ export default function Home() {
     try {
       const idsParam = BINANCE_ALPHA_IDS.join(',');
       const response = await fetch(
-        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${idsParam}&order=volume_desc&sparkline=false&price_change_percentage=24h`
+        `https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=${idsParam}&order=volume_desc&sparkline=false&price_change_percentage=24h,1h`
       );
       
       if (!response.ok) throw new Error('API request failed');
       
       const data: CoinMarketData[] = await response.json();
+      const tokenMap = new Map(BINANCE_ALPHA_TOKENS.map(t => [t.id, t]));
       
-      // 按Alpha专区代币顺序保持排名
-      const tokenMap = new Map<string, CoinMarketData>(data.map((coin) => [coin.id, coin]));
-      
-      const alphaTokens: TrendingToken[] = BINANCE_ALPHA_TOKENS
-        .map((alphaToken, index) => {
-          const coin = tokenMap.get(alphaToken.id);
-          if (!coin) return null;
+      // 计算每个代币的投资价值
+      const opportunitiesList: AlphaOpportunity[] = data
+        .map((coin) => {
+          const alphaToken = tokenMap.get(coin.id);
+          if (!alphaToken) return null;
           
           const price = Number(coin.current_price) || 0;
           const change24h = Number(coin.price_change_percentage_24h) || 0;
+          const change1h = Number(coin.price_change_percentage_1h_in_currency) || 0;
           const volume = Number(coin.total_volume) || 0;
           const marketCap = Number(coin.market_cap) || 0;
           
-          // 计算AI热度分数（基于多个维度）
-          const aiScore = calculateAiScore(volume, change24h, marketCap);
+          const { score, signal, reason, valueRatio } = calculateOpportunityScore(
+            change24h, change1h, volume, marketCap
+          );
           
           return {
-            rank: index + 1,
+            rank: 0, // 稍后按评分排序
             id: alphaToken.id,
             name: alphaToken.name,
             symbol: alphaToken.symbol,
             chain: alphaToken.chain,
             chainIcon: CHAIN_ICONS[alphaToken.chain] || '🔷',
             price: formatPrice(price),
-            change24h: `${change24h >= 0 ? '+' : ''}${change24h.toFixed(2)}%`,
-            changeColor: change24h >= 0 ? 'green' : 'red' as const,
+            change24h,
+            change1h,
             volume: formatLargeNumber(volume),
             marketCap: formatLargeNumber(marketCap),
-            aiScore,
+            opportunityScore: score,
+            signal,
+            signalReason: reason,
+            valueRatio,
             tags: [alphaToken.category, alphaToken.chain],
-            signal: getSignal(change24h, volume),
-            binanceAlpha: true,
           };
         })
-        .filter((t): t is TrendingToken => t !== null);
+        .filter((t): t is AlphaOpportunity => t !== null);
 
-      setTokens(alphaTokens);
+      // 按投资价值评分降序排列
+      opportunitiesList.sort((a, b) => b.opportunityScore - a.opportunityScore);
+      
+      // 分配排名
+      opportunitiesList.forEach((item, index) => {
+        item.rank = index + 1;
+      });
+
+      setOpportunities(opportunitiesList);
       setLastUpdated(new Date());
     } catch (error) {
       console.error('获取Alpha代币数据失败:', error);
@@ -250,8 +264,13 @@ export default function Home() {
       const data: CoinMarketData[] = await response.json();
       const candidateMap = new Map(ALPHA_CANDIDATES.map(c => [c.id, c]));
       
+      // 只推荐有上涨动力的候选币
       const picks: TodayPick[] = data
-        .map((coin: CoinMarketData) => {
+        .filter((coin) => {
+          const change = Number(coin.price_change_percentage_24h) || 0;
+          return change > 0; // 只推荐今日上涨的
+        })
+        .map((coin) => {
           const candidate = candidateMap.get(coin.id);
           if (!candidate) return null;
           
@@ -259,8 +278,10 @@ export default function Home() {
           const change24h = Number(coin.price_change_percentage_24h) || 0;
           const volume = Number(coin.total_volume) || 0;
           
-          // 计算Kairos评分
-          const kairosScore = calculateKairosScore(volume, change24h);
+          const kairosScore = Math.round(Math.min(100, 
+            Math.log10(volume + 1) * 4 + 
+            (change24h > 20 ? 35 : change24h > 0 ? 25 : 15)
+          ));
           
           return {
             id: candidate.id,
@@ -270,20 +291,37 @@ export default function Home() {
             priceChangePercent: change24h,
             kairosScore,
             socialSentiment: Math.min(100, Math.max(0, 50 + change24h * 2)),
-            socialBuzz: getSocialBuzz(volume),
+            socialBuzz: volume > 50000000 ? '热门' : volume > 10000000 ? '活跃' : '一般',
             chain: candidate.chain,
             chainIcon: CHAIN_ICONS[candidate.chain] || '🔷',
-            reason: generateReason(candidate.category, change24h, volume),
+            reason: change24h > 20 ? '24h强势上涨' : 
+                    change24h > 10 ? '今日涨幅可观' : 
+                    change24h > 0 ? '今日温和上涨' : '保持关注',
           };
         })
         .filter((p): p is TodayPick => p !== null)
         .sort((a, b) => b.kairosScore - a.kairosScore)
-        .slice(0, 5);
+        .slice(0, 3);
 
       setTodayPicks(picks);
     } catch (error) {
       console.error('获取今日推荐失败:', error);
     }
+  };
+
+  // 格式化价格
+  const formatPrice = (price: number): string => {
+    if (price >= 1) return `$${price.toFixed(2)}`;
+    if (price >= 0.01) return `$${price.toFixed(4)}`;
+    return `$${price.toFixed(6)}`;
+  };
+
+  // 格式化大数字
+  const formatLargeNumber = (num: number): string => {
+    if (num >= 1e9) return `$${(num / 1e9).toFixed(2)}B`;
+    if (num >= 1e6) return `$${(num / 1e6).toFixed(2)}M`;
+    if (num >= 1e3) return `$${(num / 1e3).toFixed(2)}K`;
+    return `$${num.toFixed(2)}`;
   };
 
   // 提交候补名单
@@ -357,6 +395,17 @@ export default function Home() {
     return () => clearInterval(interval);
   }, []);
 
+  // 获取信号样式
+  const getSignalStyle = (signal: string) => {
+    switch (signal) {
+      case 'hot': return { bg: 'bg-red-500/20', text: 'text-red-400', label: '🔥 热门机会' };
+      case 'rising': return { bg: 'bg-orange-500/20', text: 'text-orange-400', label: '📈 上升中' };
+      case 'watch': return { bg: 'bg-blue-500/20', text: 'text-blue-400', label: '👀 值得关注' };
+      case 'cooling': return { bg: 'bg-slate-500/20', text: 'text-slate-400', label: '💤 冷却中' };
+      default: return { bg: 'bg-slate-500/20', text: 'text-slate-400', label: '未知' };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-900">
       {/* 导航栏 */}
@@ -395,99 +444,141 @@ export default function Home() {
       {/* 主内容 */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero区域 */}
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             AI驱动的 <span className="text-blue-400">Alpha</span> 发现平台
           </h1>
           <p className="text-xl text-slate-400 max-w-2xl mx-auto">
-            实时监控币安Alpha专区代币，AI智能分析六维评分，发现下一个爆发机会
+            只展示今天真正有机会的Alpha代币，冷却的、错过的机会我们不推荐
           </p>
           {lastUpdated && (
             <p className="text-sm text-slate-500 mt-2">
-              数据更新时间: {lastUpdated.toLocaleTimeString()}
+              数据更新时间: {lastUpdated.toLocaleTimeString()} (每30秒自动刷新)
             </p>
           )}
         </div>
 
-        {/* Alpha热力榜 */}
+        {/* Alpha投资机会榜 - 核心功能 */}
         <section className="mb-12">
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🔥</span>
-                Alpha热力榜
+                <span className="text-2xl">🎯</span>
+                今日Alpha投资机会
               </h2>
               <p className="text-slate-400 text-sm mt-1">
-                币安Alpha专区代币实时排名（仅展示确认入选代币）
+                按投资价值实时排序，只推荐当下真正有机会的标的
               </p>
             </div>
-            <Link 
-              href="/trending"
-              className="text-blue-400 hover:text-blue-300 text-sm flex items-center gap-1"
-            >
-              查看完整榜单 →
-            </Link>
           </div>
 
           {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {[...Array(6)].map((_, i) => (
+            <div className="space-y-3">
+              {[...Array(5)].map((_, i) => (
                 <div key={i} className="bg-slate-800/50 rounded-xl p-4 animate-pulse">
-                  <div className="h-4 bg-slate-700 rounded w-1/2 mb-2"></div>
-                  <div className="h-3 bg-slate-700 rounded w-3/4"></div>
+                  <div className="h-6 bg-slate-700 rounded w-1/4 mb-2"></div>
+                  <div className="h-4 bg-slate-700 rounded w-3/4"></div>
                 </div>
               ))}
             </div>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {tokens.slice(0, 6).map((token) => (
-                <div 
-                  key={token.id}
-                  className="bg-slate-800/50 border border-blue-900/30 rounded-xl p-4 hover:border-blue-500/50 transition"
-                >
-                  <div className="flex justify-between items-start mb-3">
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-slate-400 text-sm">#{token.rank}</span>
-                        <span className="text-white font-semibold">{token.symbol}</span>
-                        <span className="text-sm">{token.chainIcon}</span>
+            <div className="space-y-3">
+              {opportunities
+                .filter(t => t.signal !== 'cooling') // 过滤掉冷却的
+                .slice(0, 8) // 只展示前8个有机会的
+                .map((token) => {
+                  const signalStyle = getSignalStyle(token.signal);
+                  return (
+                    <div 
+                      key={token.id}
+                      className="bg-slate-800/50 border border-blue-900/30 rounded-xl p-4 hover:border-blue-500/50 transition"
+                    >
+                      <div className="flex items-center justify-between">
+                        {/* 左侧：排名和代币信息 */}
+                        <div className="flex items-center gap-4">
+                          <div className={`w-10 h-10 rounded-xl flex items-center justify-center font-bold ${
+                            token.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
+                            token.rank === 2 ? 'bg-slate-400/20 text-slate-300' :
+                            token.rank === 3 ? 'bg-orange-600/20 text-orange-400' :
+                            'bg-slate-700/50 text-slate-400'
+                          }`}>
+                            {token.rank}
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-white font-semibold">{token.symbol}</span>
+                              <span className="text-sm text-slate-500">{token.chainIcon}</span>
+                              <span className={`px-2 py-0.5 rounded text-xs ${signalStyle.bg} ${signalStyle.text}`}>
+                                {signalStyle.label}
+                              </span>
+                            </div>
+                            <div className="text-xs text-slate-500 mt-0.5">
+                              {token.signalReason} · {token.tags.join(' · ')}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 中间：价格信息 */}
+                        <div className="hidden md:flex items-center gap-8">
+                          <div className="text-right">
+                            <div className="text-white font-medium">{token.price}</div>
+                            <div className="text-xs text-slate-500">当前价格</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-semibold ${
+                              token.change24h >= 0 ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                              {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-slate-500">24h</div>
+                          </div>
+                          <div className="text-right">
+                            <div className={`font-semibold ${
+                              token.change1h >= 0 ? 'text-green-400' : 'text-red-400'
+                            }`}>
+                              {token.change1h >= 0 ? '+' : ''}{token.change1h.toFixed(2)}%
+                            </div>
+                            <div className="text-xs text-slate-500">1h</div>
+                          </div>
+                        </div>
+
+                        {/* 右侧：评分 */}
+                        <div className="text-right">
+                          <div className={`text-2xl font-bold ${
+                            token.opportunityScore >= 70 ? 'text-green-400' :
+                            token.opportunityScore >= 55 ? 'text-blue-400' :
+                            'text-slate-400'
+                          }`}>
+                            {token.opportunityScore}
+                          </div>
+                          <div className="text-xs text-slate-500">机会评分</div>
+                        </div>
                       </div>
-                      <span className="text-slate-500 text-xs">{token.name}</span>
-                    </div>
-                    <div className={`px-2 py-1 rounded text-xs font-medium ${
-                      token.signal === 'hot' ? 'bg-red-500/20 text-red-400' :
-                      token.signal === 'rising' ? 'bg-orange-500/20 text-orange-400' :
-                      token.signal === 'stable' ? 'bg-blue-500/20 text-blue-400' :
-                      'bg-slate-500/20 text-slate-400'
-                    }`}>
-                      {token.signal === 'hot' ? '🔥火热' :
-                       token.signal === 'rising' ? '📈上升' :
-                       token.signal === 'stable' ? '➡️平稳' : '📉冷却'}
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-between items-end">
-                    <div>
-                      <div className="text-white text-lg font-bold">{token.price}</div>
-                      <div className={`text-sm ${token.changeColor === 'green' ? 'text-green-400' : 'text-red-400'}`}>
-                        {token.change24h}
+
+                      {/* 移动端价格 */}
+                      <div className="flex md:hidden items-center gap-4 mt-3 pt-3 border-t border-slate-700/50">
+                        <div className="text-white">{token.price}</div>
+                        <div className={`px-2 py-0.5 rounded text-sm ${
+                          token.change24h >= 0 ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'
+                        }`}>
+                          {token.change24h >= 0 ? '+' : ''}{token.change24h.toFixed(2)}%
+                        </div>
+                        <div className={`px-2 py-0.5 rounded text-sm ${
+                          token.change1h >= 0 ? 'text-green-400 bg-green-400/10' : 'text-red-400 bg-red-400/10'
+                        }`}>
+                          1h: {token.change1h >= 0 ? '+' : ''}{token.change1h.toFixed(2)}%
+                        </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <div className="text-2xl font-bold text-blue-400">{token.aiScore}</div>
-                      <div className="text-xs text-slate-500">AI热度</div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex gap-2 mt-3">
-                    {token.tags.map(tag => (
-                      <span key={tag} className="text-xs bg-blue-500/10 text-blue-400 px-2 py-1 rounded">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
+                  );
+                })}
+
+              {/* 冷却中的代币提示 */}
+              {opportunities.filter(t => t.signal === 'cooling').length > 0 && (
+                <div className="text-center py-4 text-slate-500 text-sm">
+                  还有 {opportunities.filter(t => t.signal === 'cooling').length} 个代币处于冷却状态，已隐藏
                 </div>
-              ))}
+              )}
             </div>
           )}
         </section>
@@ -497,44 +588,37 @@ export default function Home() {
           <div className="flex justify-between items-center mb-6">
             <div>
               <h2 className="text-2xl font-bold text-white flex items-center gap-2">
-                <span className="text-2xl">🎯</span>
-                今日Alpha推荐
+                <span className="text-2xl">⭐</span>
+                潜力候选池
               </h2>
               <p className="text-slate-400 text-sm mt-1">
-                AI预测可能进入Alpha专区的潜力代币（来自候选池）
+                尚未入选Alpha但今日表现活跃，可能进入下轮Alpha
               </p>
             </div>
           </div>
 
           <div className="bg-slate-800/30 rounded-xl border border-blue-900/30 overflow-hidden">
-            <div className="grid grid-cols-5 gap-4 p-4 bg-slate-900/50 text-sm text-slate-400 border-b border-blue-900/30">
-              <div>代币</div>
-              <div className="text-right">价格</div>
-              <div className="text-right">24h涨跌</div>
-              <div className="text-right">Kairos评分</div>
-              <div className="text-right">推荐理由</div>
-            </div>
             {todayPicks.length === 0 ? (
               <div className="p-8 text-center text-slate-500">
-                加载中...
+                暂无符合条件的候选币
               </div>
             ) : (
               todayPicks.map((pick, index) => (
                 <div 
                   key={pick.id}
-                  className="grid grid-cols-5 gap-4 p-4 hover:bg-slate-800/50 transition border-b border-blue-900/20 last:border-0"
+                  className="grid grid-cols-4 gap-4 p-4 hover:bg-slate-800/50 transition border-b border-blue-900/20 last:border-0"
                 >
                   <div className="flex items-center gap-2">
-                    <span className="w-6 h-6 bg-blue-500/20 rounded-full flex items-center justify-center text-blue-400 text-xs">
+                    <span className="w-6 h-6 bg-cyan-500/20 rounded-full flex items-center justify-center text-cyan-400 text-xs">
                       {index + 1}
                     </span>
                     <div>
                       <div className="text-white font-medium">{pick.symbol}</div>
-                      <div className="text-slate-500 text-xs">{pick.chainIcon} {pick.chain}</div>
+                      <div className="text-slate-500 text-xs">{pick.chainIcon}</div>
                     </div>
                   </div>
                   <div className="text-right text-white">
-                    ${pick.price.toFixed(pick.price < 1 ? 6 : 2)}
+                    ${pick.price.toFixed(pick.price < 1 ? 6 : 4)}
                   </div>
                   <div className={`text-right font-medium ${
                     pick.priceChangePercent >= 0 ? 'text-green-400' : 'text-red-400'
@@ -544,14 +628,11 @@ export default function Home() {
                   <div className="text-right">
                     <span className={`text-lg font-bold ${
                       pick.kairosScore >= 70 ? 'text-green-400' :
-                      pick.kairosScore >= 50 ? 'text-yellow-400' : 'text-slate-400'
+                      pick.kairosScore >= 50 ? 'text-blue-400' : 'text-slate-400'
                     }`}>
                       {pick.kairosScore}
                     </span>
                     <span className="text-slate-500 text-xs ml-1">/100</span>
-                  </div>
-                  <div className="text-right">
-                    <span className="text-slate-400 text-sm">{pick.reason}</span>
                   </div>
                 </div>
               ))
@@ -630,7 +711,7 @@ export default function Home() {
       {/* Footer */}
       <footer className="border-t border-blue-900/30 mt-12 py-8">
         <div className="max-w-7xl mx-auto px-4 text-center text-slate-500 text-sm">
-          <p>© 2025 Kairos. 数据来源: CoinGecko API | Binance Alpha</p>
+          <p>© 2025 Kairos. 数据来源: CoinGecko API | Binance Alpha | 不构成投资建议</p>
         </div>
       </footer>
     </div>
