@@ -40,7 +40,7 @@ const CHAIN_ICONS: Record<string, string> = {
   BNB: '🟡',
 };
 
-// 交易平台
+// 交易平台 - 简单设计
 function TradeModal({ symbol, chain, onClose }: { symbol: string; chain: string; onClose: () => void }) {
   const binanceUrl = `https://www.binance.com/en/trade/${symbol}_USDT?type=spot`;
   const jupiterUrl = `https://jup.ag/swap/SOL-${symbol}`;
@@ -49,30 +49,25 @@ function TradeModal({ symbol, chain, onClose }: { symbol: string; chain: string;
   const pancakeswapUrl = `https://pancakeswap.finance/swap?outputCurrency=${symbol}`;
 
   const platforms = [
-    { name: '币安交易', icon: '🏛️', url: binanceUrl, desc: '中心化交易所，安全稳定' },
-    chain === 'SOL' && { name: 'Jupiter', icon: '🟣', url: jupiterUrl, desc: 'SOL链龙头DEX' },
-    chain === 'SOL' && { name: 'Raydium', icon: '🔵', url: raydiumUrl, desc: 'SOL链流动性最好' },
-    chain === 'ETH' && { name: 'Uniswap', icon: '🟠', url: uniswapUrl, desc: 'ETH链龙头DEX' },
-    (chain === 'BASE' || chain === 'BNB') && { name: 'PancakeSwap', icon: '🧁', url: pancakeswapUrl, desc: 'BSC链龙头DEX' },
-  ].filter(Boolean) as { name: string; icon: string; url: string; desc: string }[];
+    { name: '币安交易', url: binanceUrl },
+    chain === 'SOL' && { name: 'Jupiter', url: jupiterUrl },
+    chain === 'SOL' && { name: 'Raydium', url: raydiumUrl },
+    chain === 'ETH' && { name: 'Uniswap', url: uniswapUrl },
+    (chain === 'BASE' || chain === 'BNB') && { name: 'PancakeSwap', url: pancakeswapUrl },
+  ].filter(Boolean) as { name: string; url: string }[];
 
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4" onClick={onClose}>
-      <div className="bg-slate-900 rounded-2xl p-6 max-w-md w-full border border-slate-700 shadow-2xl" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center mb-6">
-          <h3 className="text-xl font-bold text-white">交易 {symbol}</h3>
-          <button onClick={onClose} className="text-slate-400 hover:text-white text-2xl">&times;</button>
+      <div className="bg-slate-900 rounded-xl p-4 w-64" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center mb-3">
+          <span className="text-white font-semibold">{symbol}</span>
+          <button onClick={onClose} className="text-slate-400 hover:text-white">✕</button>
         </div>
-        <div className="space-y-3">
+        <div className="space-y-2">
           {platforms.map((p) => (
             <a key={p.name} href={p.url} target="_blank" rel="noopener noreferrer"
-              className="flex items-center gap-4 p-4 bg-slate-800 hover:bg-slate-700 rounded-xl transition-all group">
-              <span className="text-2xl">{p.icon}</span>
-              <div className="flex-1">
-                <div className="text-white font-semibold">{p.name}</div>
-                <div className="text-slate-400 text-sm">{p.desc}</div>
-              </div>
-              <span className="text-cyan-400 group-hover:translate-x-1 transition-transform">→</span>
+              className="block text-center py-2 px-4 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg transition-colors">
+              {p.name}
             </a>
           ))}
         </div>
