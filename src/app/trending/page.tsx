@@ -76,68 +76,30 @@ export default function TrendingPage() {
 
   const fetchData = useCallback(async () => {
     try {
-      const ids = ALPHA_TOKENS.map(t => t.id).join(',');
-      const response = await fetch(
-        `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`,
-        { signal: AbortSignal.timeout(10000) }
-      );
+      // 调用服务端API获取数据
+      const response = await fetch('/api/alpha-ranking', {
+        cache: 'no-store',
+      });
       
       if (!response.ok) throw new Error('API failed');
       
-      const priceData = await response.json();
+      const result = await response.json();
       
-      const data: TokenData[] = ALPHA_TOKENS.map((t, i) => {
-        const coinData = priceData[t.id];
-        const price = coinData?.usd || 0;
-        const change = coinData?.usd_24h_change || 0;
-        const volume = coinData?.usd_24h_vol || 10000000;
+      if (result.success && result.opportunities) {
+        const data: TokenData[] = result.opportunities.map((o: any) => ({
+          ...o,
+          price: parseFloat(o.price) || 0,
+          priceChange24h: parseFloat(o.priceChange24h) || 0,
+          volume24h: parseFloat(o.volume24h) || 0,
+          dataSource: result.dataSource || 'api',
+        }));
         
-        // Kairos评分计算
-        const changeScore = Math.min(Math.max(change + 10, 0) * 3, 50);
-        const volumeScore = Math.min(Math.log10(volume + 1) * 2, 30);
-        const momentumScore = change > 0 ? Math.min(change * 2, 20) : Math.max(20 + change, 0);
-        const kairosScore = Math.round(changeScore + volumeScore + momentumScore);
-        
-        // 交易计划
-        const entry = price;
-        const target = price * (1 + Math.abs(change) / 100 + 0.05);
-        const stopLoss = price * (1 - Math.abs(change) / 200 - 0.03);
-        
-        let signal: 'strong' | 'watch' | 'wait' = 'wait';
-        let signalText = '暂无明显信号';
-        if (kairosScore >= 70) { signal = 'strong'; signalText = change > 0 ? '持续上涨趋势' : '超跌反弹信号'; }
-        else if (kairosScore >= 40) { signal = 'watch'; signalText = '需关注突破关键位'; }
-        
-        return {
-          rank: i + 1,
-          symbol: t.symbol,
-          name: t.name,
-          price,
-          priceChange24h: change,
-          volume24h: volume,
-          kairosScore,
-          signal,
-          signalText,
-          chain: t.chain,
-          category: t.category,
-          desc: t.desc,
-          tradingPlan: {
-            entry,
-            target,
-            stopLoss,
-            riskReward: ((target - entry) / Math.abs(entry - stopLoss)).toFixed(2),
-          },
-          dataSource: 'CoinGecko实时',
-        };
-      });
-      
-      // 按Kairos评分排序
-      data.sort((a, b) => b.kairosScore - a.kairosScore);
-      data.forEach((t, i) => { t.rank = i + 1; });
-      
-      setTokens(data);
-      setLastUpdate(new Date().toLocaleTimeString());
-      setError('');
+        setTokens(data);
+        setLastUpdate(new Date(result.updatedAt).toLocaleTimeString());
+        setError('');
+      } else {
+        throw new Error('No data');
+      }
     } catch (e) {
       setError('无法获取实时数据，请检查网络连接');
     } finally {
