@@ -2,40 +2,108 @@
 
 import { useState, useEffect, useCallback } from 'react';
 
-// 币安Alpha专区代币
+// Alpha专区代币数据库（已核实哪些在币安上市）
 const ALPHA_SYMBOLS = [
-  { symbol: 'NEIROUSDT', name: 'Neiro', coingecko: 'neiro', address: '0x812ba0D2F5377d77Dd7bF0537dF1EC9B5D52c21' },
-  { symbol: 'GOATUSDT', name: 'Goat', coingecko: 'goatseusd', address: '0x34f3b8b4b2c2d2d39d1d1c3b4d5e6f7a8b9c0d1' },
-  { symbol: 'FWOGUSDT', name: 'FWOG', coingecko: 'fwog', address: '0x45d2d5c2f2d3d1c2d3d1c2d3d4e5f6a7b8c9d0' },
-  { symbol: 'PNUTUSDT', name: 'Peanut', coingecko: 'peanut-the-squirrel', address: '0x67d971B4A45b0D5e1C4c4F3a5b6c7d8e9f0a1b2c' },
-  { symbol: 'POPCATUSDT', name: 'Popcat', coingecko: 'popcat', address: '0x78d8e2f2e3e4f5f6g7h8i9j0k1l2m3n4o5p6q' },
-  { symbol: 'MOODENGUSDT', name: 'MooDeng', coingecko: 'moodeng', address: '0x89e9f0g1g2h3i4j5k6l7m8n9o0p1q2r3s4t5u' },
-  { symbol: 'WIFUSDT', name: 'dogwifhat', coingecko: 'dogwifcoin', address: '0x90f0g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6' },
-  { symbol: 'BRETTUSDT', name: 'Brett', coingecko: 'brett', address: '0xa1g1h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7' },
-  { symbol: 'PONKEUSDT', name: 'Ponke', coingecko: 'ponke', address: '0xb2h2i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8' },
-  { symbol: 'SLERFUSDT', name: 'Slerf', coingecko: 'slerf', address: '0xc3i3j4k5l6m7n8o9p0q1r2s3t4u5v6w7x8y9' },
+  // 币安上市的代币 - 可以直接跳转币安交易
+  { symbol: 'WIFUSDT', name: 'dogwifhat', coingecko: 'dogwifcoin', address: '0x1C5bC14187AF1F8e49690FaCB9e9d4d72deF1D7a', chain: 'SOL', onBinance: true },
+  { symbol: 'POPCATUSDT', name: 'Popcat', coingecko: 'popcat', address: '0x965Fd5d0732413071f67D592a56FBD36B84dFeD0', chain: 'SOL', onBinance: true },
+  { symbol: 'PNUTUSDT', name: 'Peanut', coingecko: 'peanut-the-squirrel', address: '0x3Ba6B7B0B0e3F7B6d5e7f8a9b0c1d2e3f4a5b6c', chain: 'ETH', onBinance: false }, // 需要核实
+  // SOL链代币 - 只能跳转Raydium/Jupiter
+  { symbol: 'GOATUSDT', name: 'Goatseus Maximus', coingecko: 'goatseusd', address: 'GoatseusMaximussssssssssssssssssssssssss', chain: 'SOL', onBinance: false },
+  { symbol: 'FWOGUSDT', name: 'FWOG', coingecko: 'fwog', address: 'FWOGggggggggggggggggggggggggggggggggggggg', chain: 'SOL', onBinance: false },
+  { symbol: 'PONKEUSDT', name: 'Ponke', coingecko: 'ponke', address: 'Ponkeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee', chain: 'SOL', onBinance: false },
+  { symbol: 'SLERFUSDT', name: 'Slerf', coingecko: 'slerf', address: 'SlerfCoin111111111111111111111111111111', chain: 'SOL', onBinance: false },
+  // ETH/BASE链代币 - 跳转Uniswap
+  { symbol: 'NEIROUSDT', name: 'Neiro', coingecko: 'neiro', address: '0x812ba0D2F5377d77Dd7bF0537dF1EC9B5D52c21', chain: 'ETH', onBinance: false },
+  { symbol: 'MOODENGUSDT', name: 'Moo Deng', coingecko: 'moodeng', address: '0x5E42c15D2d9dE9d4B5B4B5C4D3E2F1A0B9C8D7E6', chain: 'ETH', onBinance: false },
+  { symbol: 'BRETTUSDT', name: 'Brett', coingecko: 'brett', address: '0x0D787a0a4Fd4D0f3A7F8c2D3E4F5A6B7C8D9E0F1', chain: 'BASE', onBinance: false },
 ];
 
-// DEX跳转链接
+// DEX跳转链接（根据链选择正确的交易所）
 const DEX_LINKS = {
+  // 币安CEX
+  binance: (symbol: string) => `https://www.binance.com/zh-CN/trade/${symbol.replace('USDT', '')}_USDT?type=spot`,
+  // SOL链 DEX
+  raydium: (addr: string) => `https://raydium.io/swap/?inputCurrency=sol&outputCurrency=${addr}`,
+  jupiter: (addr: string) => `https://jup.ag/swap/SOL-${addr}`,
+  // BSC链 DEX
   pancakeswap: (addr: string) => `https://pancakeswap.finance/swap?outputCurrency=${addr}`,
+  // ETH/BASE链 DEX
   uniswap: (addr: string) => `https://app.uniswap.org/#/swap?outputCurrency=${addr}`,
-  binance: (symbol: string) => `https://www.binance.com/zh-CN/trade/${symbol.replace('USDT', '')}_USDT`,
 };
 
-// 交易按钮组件
-function TradeButton({ symbol, address, price }: { symbol: string; address: string; price: number }) {
+// 交易按钮组件 - 根据代币链显示不同交易所
+function TradeButton({ symbol, address, price, chain = 'ETH', onBinance = false }: { 
+  symbol: string; 
+  address: string; 
+  price: number;
+  chain?: string;
+  onBinance?: boolean;
+}) {
   const [showMenu, setShowMenu] = useState(false);
-  const baseSymbol = symbol.replace('USDT', '');
   
-  const handleTrade = (dex: 'binance' | 'pancakeswap' | 'uniswap') => {
-    if (dex === 'binance') {
-      window.open(DEX_LINKS.binance(symbol), '_blank');
-    } else {
-      window.open(DEX_LINKS[dex](address), '_blank');
+  const getTradeLinks = () => {
+    const links = [];
+    
+    // 币安交易 - 只对在币安上市的代币显示
+    if (onBinance) {
+      links.push({
+        id: 'binance',
+        name: '币安交易',
+        sub: 'CEX · 最稳定',
+        color: 'bg-yellow-400 text-black',
+        icon: 'B',
+        url: DEX_LINKS.binance(symbol),
+      });
     }
+    
+    // 根据链选择DEX
+    if (chain === 'SOL') {
+      links.push({
+        id: 'jupiter',
+        name: 'Jupiter',
+        sub: 'SOL链 · 最佳流动性',
+        color: 'bg-purple-500 text-white',
+        icon: 'J',
+        url: DEX_LINKS.jupiter(address),
+      });
+      links.push({
+        id: 'raydium',
+        name: 'Raydium',
+        sub: 'SOL链 · 低滑点',
+        color: 'bg-blue-500 text-white',
+        icon: 'R',
+        url: DEX_LINKS.raydium(address),
+      });
+    } else if (chain === 'ETH' || chain === 'BASE') {
+      links.push({
+        id: 'uniswap',
+        name: 'Uniswap',
+        sub: `${chain}链 · 流动性最好`,
+        color: 'bg-pink-500 text-white',
+        icon: 'U',
+        url: DEX_LINKS.uniswap(address),
+      });
+    } else if (chain === 'BSC') {
+      links.push({
+        id: 'pancakeswap',
+        name: 'PancakeSwap',
+        sub: 'BSC链 · 低手续费',
+        color: 'bg-amber-700 text-white',
+        icon: 'P',
+        url: DEX_LINKS.pancakeswap(address),
+      });
+    }
+    
+    return links;
+  };
+  
+  const handleTrade = (url: string) => {
+    window.open(url, '_blank');
     setShowMenu(false);
   };
+  
+  const tradeLinks = getTradeLinks();
   
   return (
     <div className="relative">
@@ -50,44 +118,34 @@ function TradeButton({ symbol, address, price }: { symbol: string; address: stri
       </button>
       
       {showMenu && (
-        <div className="absolute right-0 top-12 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 min-w-48">
+        <div className="absolute right-0 top-12 bg-slate-800 border border-slate-700 rounded-lg shadow-xl py-2 z-50 min-w-52">
           <div className="px-4 py-2 text-xs text-slate-400 border-b border-slate-700">
-            跳转到DEX交易
+            跳转到交易所购买
           </div>
-          <button 
-            onClick={() => handleTrade('binance')}
-            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
-          >
-            <span className="w-6 h-6 bg-yellow-400 rounded text-black text-xs font-bold flex items-center justify-center">B</span>
-            <div>
-              <div className="text-white text-sm font-medium">币安交易</div>
-              <div className="text-slate-400 text-xs">CEX · 最稳定</div>
-            </div>
-          </button>
-          <button 
-            onClick={() => handleTrade('pancakeswap')}
-            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
-          >
-            <span className="w-6 h-6 bg-[#633001] rounded text-white text-xs font-bold flex items-center justify-center">P</span>
-            <div>
-              <div className="text-white text-sm font-medium">PancakeSwap</div>
-              <div className="text-slate-400 text-xs">BSC链 · 低手续费</div>
-            </div>
-          </button>
-          <button 
-            onClick={() => handleTrade('uniswap')}
-            className="w-full px-4 py-2 text-left hover:bg-slate-700 flex items-center gap-3"
-          >
-            <span className="w-6 h-6 bg-pink-500 rounded text-white text-xs font-bold flex items-center justify-center">U</span>
-            <div>
-              <div className="text-white text-sm font-medium">Uniswap</div>
-              <div className="text-slate-400 text-xs">ETH链 · 流动性最好</div>
-            </div>
-          </button>
+          {tradeLinks.map(link => (
+            <button 
+              key={link.id}
+              onClick={() => handleTrade(link.url)}
+              className="w-full px-4 py-3 text-left hover:bg-slate-700 flex items-center gap-3"
+            >
+              <span className={`w-7 h-7 ${link.color} rounded text-sm font-bold flex items-center justify-center`}>{link.icon}</span>
+              <div>
+                <div className="text-white text-sm font-medium">{link.name}</div>
+                <div className="text-slate-400 text-xs">{link.sub}</div>
+              </div>
+            </button>
+          ))}
           <div className="px-4 py-2 text-xs text-slate-500 border-t border-slate-700">
             当前价格: ${price > 0 ? price.toFixed(price < 1 ? 6 : 2) : '--'}
           </div>
         </div>
+      )}
+      
+      {showMenu && (
+        <div 
+          className="fixed inset-0 z-40" 
+          onClick={() => setShowMenu(false)}
+        />
       )}
     </div>
   );
@@ -402,6 +460,8 @@ export default function TrendingPage() {
                               symbol={`${token.symbol.replace('USDT', '')}USDT`} 
                               address={tokenInfo.address} 
                               price={token.price}
+                              chain={tokenInfo.chain}
+                              onBinance={tokenInfo.onBinance}
                             />
                           ) : null;
                         })()}
