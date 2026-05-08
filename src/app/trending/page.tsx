@@ -30,7 +30,8 @@ interface Platform {
 }
 
 // 币安上市代币白名单
-const BINANCE_LISTED = ['ONDO', 'VIRTUAL', 'AERO', 'DRIFT', 'POPCAT', 'MORPHO', 'FARTCOIN', 'MOG', 'AGT'];
+// 只对确认在币安上市的代币显示币安按钮
+const BINANCE_LISTED = ['ONDO', 'VIRTUAL', 'POPCAT'];
 
 // 备用数据
 const BACKUP_DATA: TokenData[] = [
@@ -65,29 +66,20 @@ function getTradePlatforms(symbol: string, chain: string): Platform[] {
 }
 
 function getTradeUrl(symbol: string, exchange: string): string {
-  const urls: Record<string, Record<string, string>> = {
-    binance: {
-      ONDO: 'https://www.binance.com/en/trade/ONDO_USDT',
-      VIRTUAL: 'https://www.binance.com/en/trade/VIRTUAL_USDT',
-      AERO: 'https://www.binance.com/en/trade/AERO_USDT',
-      DRIFT: 'https://www.binance.com/en/trade/DRIFT_USDT',
-      POPCAT: 'https://www.binance.com/en/trade/POPCAT_USDT',
-      MORPHO: 'https://www.binance.com/en/trade/MORPHO_USDT',
-      FARTCOIN: 'https://www.binance.com/en/trade/FARTCOIN_USDT',
-      MOG: 'https://www.binance.com/en/trade/MOG_USDT',
-      AGT: 'https://www.binance.com/en/trade/AGT_USDT',
-    },
-    jupiter: { default: 'https://jup.ag/swap/SOL' },
-    raydium: { default: 'https://raydium.io/swap/' },
-    uniswap: { default: 'https://app.uniswap.org/#/swap' },
-    pancakeswap: { default: 'https://pancakeswap.finance/swap' },
-  };
-  
+  // 直接生成币安链接，格式固定
   if (exchange === 'binance') {
-    return urls.binance[symbol] || `https://www.binance.com/en/trade/${symbol}_USDT`;
+    return `https://www.binance.com/en/trade/${symbol}_USDT`;
   }
   
-  return urls[exchange]?.default || 'https://www.binance.com';
+  // DEX链接
+  const dexUrls: Record<string, string> = {
+    jupiter: `https://jup.ag/swap/SOL-${symbol}`,
+    raydium: `https://raydium.io/swap/?inputCurrency=sol&outputCurrency=${symbol}`,
+    uniswap: `https://app.uniswap.org/#/swap?outputCurrency=${symbol}`,
+    pancakeswap: `https://pancakeswap.finance/swap?outputCurrency=${symbol}`,
+  };
+  
+  return dexUrls[exchange] || 'https://www.binance.com';
 }
 
 function formatPrice(price: number): string {
