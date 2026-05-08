@@ -19,11 +19,11 @@ const BACKUP_PRICES: Record<string, { price: number; change: number }> = {
   'ondo-finance': { price: 1.15, change: 5.2 },
   'virtual-protocol': { price: 2.85, change: 12.8 },
   'aerodrome-finance': { price: 1.45, change: 8.5 },
-  'fartcoin': { price: 1.12, change: 18.5 },
+  'fartcoin': { price: 0.25, change: 18.5 },
   'morpho-protocol': { price: 2.35, change: 3.2 },
   'drift-protocol': { price: 0.42, change: 7.8 },
   'popcat': { price: 0.95, change: 15.3 },
-  'mog-coin': { price: 0.0018, change: -2.5 },
+  'mog-coin': { price: 0.0000018, change: 4.2 },
   'agt-coin': { price: 0.085, change: 22.1 },
 };
 
@@ -66,8 +66,8 @@ export async function GET() {
     
     const opportunities = ALPHA_TOKENS.map((t, i) => {
       const coinData = priceData[t.id] || {};
-      const price = coinData?.usd || BACKUP_PRICES[t.id]?.price || 0;
-      const change = coinData?.usd_24h_change || BACKUP_PRICES[t.id]?.change || 0;
+      const apiPrice = coinData?.usd || 0; const price = (apiPrice > 0.000001) ? apiPrice : (BACKUP_PRICES[t.id]?.price || 0);
+      const apiChange = coinData?.usd_24h_change || 0; const change = apiChange !== 0 ? apiChange : (BACKUP_PRICES[t.id]?.change || 0);
       const volume = coinData?.usd_24h_vol || 10000000 + Math.random() * 50000000;
       
       // Kairos评分
