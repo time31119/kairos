@@ -88,24 +88,50 @@ const BACKUP_DATA: TokenData[] = [
   { rank: 9, symbol: 'FARTCOIN', name: 'Fartcoin', chain: 'SOL', category: 'Meme/AI', desc: 'Meme+AI概念', price: 0.25, priceChange24h: 0.70, volume24h: 25940274, kairosScore: 48, signal: 'watch', signalText: '需关注突破关键位', tradingPlan: { entry: 0.25, target: 0.26, stopLoss: 0.24, riskReward: '1.70' }, dataSource: 'coinGecko' },
 ];
 
+// 确认在币安上市的代币
+const BINANCE_LISTED = ['ONDO', 'VIRTUAL', 'AERO', 'DRIFT', 'POPCAT', 'MORPHO'];
+
 // 获取交易平台
-function getPlatforms(chain: string) {
-  const solPlatforms = [
-    { name: '币安', exchange: 'binance' },
-    { name: 'Jupiter', exchange: 'jupiter' },
-    { name: 'Raydium', exchange: 'raydium' },
-  ];
-  const ethPlatforms = [
-    { name: '币安', exchange: 'binance' },
-    { name: 'Uniswap', exchange: 'uniswap' },
-  ];
-  const basePlatforms = [
-    { name: 'Uniswap', exchange: 'uniswap' },
-    { name: 'PancakeSwap', exchange: 'pancakeswap' },
-  ];
-  if (chain === 'SOL') return solPlatforms;
-  if (chain === 'ETH') return ethPlatforms;
-  return basePlatforms;
+function getPlatforms(symbol: string, chain: string) {
+  const listedOnBinance = BINANCE_LISTED.includes(symbol);
+  
+  if (chain === 'SOL') {
+    return listedOnBinance
+      ? [
+          { name: '币安', exchange: 'binance' },
+          { name: 'Jupiter', exchange: 'jupiter' },
+          { name: 'Raydium', exchange: 'raydium' },
+        ]
+      : [
+          { name: 'Jupiter', exchange: 'jupiter' },
+          { name: 'Raydium', exchange: 'raydium' },
+        ];
+  }
+  
+  if (chain === 'ETH') {
+    return listedOnBinance
+      ? [
+          { name: '币安', exchange: 'binance' },
+          { name: 'Uniswap', exchange: 'uniswap' },
+        ]
+      : [
+          { name: 'Uniswap', exchange: 'uniswap' },
+        ];
+  }
+  
+  if (chain === 'BASE') {
+    return listedOnBinance
+      ? [
+          { name: '币安', exchange: 'binance' },
+          { name: 'Uniswap', exchange: 'uniswap' },
+        ]
+      : [
+          { name: 'Uniswap', exchange: 'uniswap' },
+          { name: 'PancakeSwap', exchange: 'pancakeswap' },
+        ];
+  }
+  
+  return [{ name: 'Uniswap', exchange: 'uniswap' }];
 }
 
 export default function TrendingPage() {
@@ -248,7 +274,7 @@ export default function TrendingPage() {
                 {/* 交易按钮 - 直接显示在卡片底部 */}
                 <div className="px-4 py-3 bg-slate-900 border-t border-slate-800">
                   <div className="flex gap-2">
-                    {getPlatforms(token.chain).map(p => (
+                    {getPlatforms(token.symbol, token.chain).map(p => (
                       <a key={p.exchange} href={getTradeUrl(token.symbol, p.exchange)} target="_blank" rel="noopener noreferrer"
                         className="flex-1 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-center text-sm font-medium transition-colors">
                         跳转 {p.name}
