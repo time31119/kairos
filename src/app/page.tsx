@@ -78,8 +78,6 @@ export default function Home() {
     { id: 'popcat', symbol: 'POPCAT', name: 'Popcat', category: 'Meme' },
     { id: 'ponke', symbol: 'PONKE', name: 'Ponke', category: 'Meme' },
     { id: 'floki', symbol: 'FLOKI', name: 'FLOKI', category: 'Meme' },
-    { id: 'shiba-inu', symbol: 'SHIB', name: 'Shiba Inu', category: 'Meme' },
-    { id: '本位币', symbol: 'BEN', name: 'Ben', category: 'Meme' },
   ];
   
   // 提取ID列表用于API调用
