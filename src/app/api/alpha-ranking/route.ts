@@ -38,7 +38,7 @@ export async function GET() {
       const response = await fetch(
         `https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true`,
         { 
-          next: { revalidate: 30 },
+          
           signal: AbortSignal.timeout(8000)
         }
       );

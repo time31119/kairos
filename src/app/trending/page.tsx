@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 // 币安Alpha专区代币
 const ALPHA_TOKENS = [
@@ -135,9 +135,47 @@ function getPlatforms(symbol: string, chain: string) {
 }
 
 export default function TrendingPage() {
-  const [tokens] = useState<TokenData[]>(BACKUP_DATA);
+  const [tokens, setTokens] = useState<TokenData[]>([]);
   const [filter, setFilter] = useState<'all' | 'strong' | 'watch'>('all');
-  const [lastUpdate] = useState(new Date().toLocaleTimeString());
+  const [lastUpdate, setLastUpdate] = useState('');
+  const [loading, setLoading] = useState(true);
+
+  // 获取数据
+  const fetchData = useCallback(async () => {
+    try {
+      setLoading(true);
+      // 调用服务端API获取实时数据
+      const response = await fetch('/api/alpha-ranking?ts=' + Date.now());
+      const result = await response.json();
+      
+      if (result.success && result.opportunities) {
+        setTokens(result.opportunities);
+        setLastUpdate(new Date(result.updatedAt).toLocaleTimeString());
+      } else {
+        // API失败，使用备用数据
+        const data = [...BACKUP_DATA];
+        data.sort((a, b) => b.kairosScore - a.kairosScore);
+        data.forEach((t, i) => t.rank = i + 1);
+        setTokens(data);
+        setLastUpdate(new Date().toLocaleTimeString());
+      }
+    } catch (e) {
+      // 失败使用备用
+      const data = [...BACKUP_DATA];
+      data.sort((a, b) => b.kairosScore - a.kairosScore);
+      data.forEach((t, i) => t.rank = i + 1);
+      setTokens(data);
+      setLastUpdate(new Date().toLocaleTimeString());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    const interval = setInterval(fetchData, 30000); // 每30秒刷新
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   // 筛选
   const filteredTokens = tokens.filter(t => {
@@ -145,6 +183,7 @@ export default function TrendingPage() {
     if (filter === 'watch') return t.signal === 'watch';
     return true;
   });
+
 
   return (
     <div className="min-h-screen bg-slate-950">
